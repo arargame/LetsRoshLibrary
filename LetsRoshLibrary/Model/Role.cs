@@ -4,9 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LetsRoshLibrary
+namespace LetsRoshLibrary.Model
 {
-    public class Class1
+    public class Role
     {
+        public string Name { get; set; }
     }
 }

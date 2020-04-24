@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LetsRoshLibrary.Model;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,6 +11,7 @@ namespace LetsRoshTestApp
     {
         static void Main(string[] args)
         {
+            Hero.Load();
         }
     }
 }
