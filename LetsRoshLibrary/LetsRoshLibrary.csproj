@@ -50,6 +50,7 @@
     <Compile Include="Model\Hero.cs" />
     <Compile Include="Model\Image.cs" />
     <Compile Include="Model\Role.cs" />
+    <Compile Include="Model\Skill.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup />
