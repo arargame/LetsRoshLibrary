@@ -151,7 +151,93 @@ namespace LetsRoshLibrary.Model
 
                     var skillImageNode = HtmlParser.GetDescendantsByAttribute(skillNode, "img", "class", "overviewAbilityImg").FirstOrDefault();
 
+                    if (skillImageNode == null)
+                        throw new Exception("skillImageNode is null");
+
                     skill.LoadImage(skillImageNode.GetAttributeValue("src",""));
+
+                    var skillNameNode = HtmlParser.GetDescendantsByAttribute(skillNode,"div","class","abilityHeaderRowDescription")
+                                                    .FirstOrDefault()
+                                                    .Descendants("h2")
+                                                    .FirstOrDefault();
+                    if (skillNameNode == null)
+                        throw new Exception("skillNameNode is null");
+
+                    skill.Name = skillNameNode.InnerText;
+
+                    var skillDescriptionNode = HtmlParser.GetDescendantsByAttribute(skillNode, "div", "class", "abilityHeaderRowDescription")
+                                                    .FirstOrDefault()
+                                                    .Descendants("p")
+                                                    .FirstOrDefault();
+
+                    if (skillDescriptionNode == null)
+                        throw new Exception("skillDescriptionNode is null");
+
+                    skill.Description = skillDescriptionNode.InnerText;
+
+                    var manaCostNode = HtmlParser.GetDescendantsByAttribute(skillNode, "div", "class", "mana")
+                                                .FirstOrDefault()
+                                                .ChildNodes
+                                                .Last();
+
+                    if (manaCostNode == null)
+                        throw new Exception("manaCostNode is null");
+
+                    skill.ManaCost = manaCostNode.InnerText.Trim();
+
+                    var cooldownNode = HtmlParser.GetDescendantsByAttribute(skillNode, "div", "class", "cooldown")
+                                                .FirstOrDefault()
+                                                .ChildNodes
+                                                .Last();
+
+                    if (cooldownNode == null)
+                        throw new Exception("cooldownNode is null");
+
+                    skill.CoolDown = cooldownNode.InnerText.Trim();
+
+                    var abilitiesDiv = HtmlParser.GetDescendantsByAttribute(skillNode, "div", "class", "abilityFooterBox").FirstOrDefault();
+
+                    if (abilitiesDiv == null)
+                        throw new Exception("abilitiesDiv is null");
+
+                    var leftAbilitiesDiv = HtmlParser.GetDescendantsByAttribute(abilitiesDiv, "div","class", "abilityFooterBoxLeft").FirstOrDefault();
+
+                    var rightAbilitiesDiv = HtmlParser.GetDescendantsByAttribute(abilitiesDiv, "div", "class", "abilityFooterBoxRight").FirstOrDefault();
+
+                    skill.Extra = leftAbilitiesDiv.InnerText;
+
+                    var extrasList = leftAbilitiesDiv.ChildNodes
+                                                    .Union(rightAbilitiesDiv.ChildNodes)
+                                                    .Select(cn => cn.InnerText.Trim())
+                                                    .Where(t => !string.IsNullOrWhiteSpace(t))
+                                                    .ToList();
+
+                    var extras = new List<string>();
+
+                    for (int i = 0; i < extrasList.Count/2; i++)
+                    {
+                        var pair = extrasList.Skip(i * 2).Take(2).ToList();
+
+                        extras.Add(string.Format("{0}{1}", pair[0], pair[1]));
+                    }
+
+                    skill.Extra = string.Join(",", extras);
+
+                    var videoNode = HtmlParser.GetDescendantsByAttribute(skillNode, "div", "class", "abilityVideoContainer").FirstOrDefault().Descendants("iframe").FirstOrDefault();
+
+                    if (videoNode == null)
+                        throw new Exception("videoNode is null");
+
+                    skill.Video = videoNode.GetAttributeValue("src","");
+
+                    var loreNode = HtmlParser.GetDescendantsByAttribute(skillNode,"div","class", "abilityLore").FirstOrDefault();
+
+                    if (loreNode == null)
+                        throw new Exception("loreNode is null");
+
+                    skill.Lore = loreNode.InnerText;
+
+                    hero.Skills.Add(skill);
                 }
             }
             catch (Exception ex)
