@@ -10,17 +10,19 @@ namespace LetsRoshLibrary.Model
 {
     public class Hero : Character
     {
-        public Image Portrait { get; set; }
-
         public string Roles { get; set; }
+        public Image Portrait { get; set; }
 
         public List<Skill> Skills = new List<Skill>();
 
-        public static List<Hero> Load()
+        public static List<Hero> Load(Language language = null)
         {
+            if (language == null)
+                language = Language.DefaultLanguage;
+
             var list = new List<Hero>();
 
-            var htmlParser = new HtmlParser("http://www.dota2.com/heroes/", DataAccessType.FromWeb).Load();
+            var htmlParser = new HtmlParser(string.Format("http://www.dota2.com/heroes/?l={0}", language.Name.ToLower()), DataAccessType.FromWeb).Load();
 
             var heroLinkNodes = HtmlParser.GetDescendantsByAttribute(htmlParser.Document.DocumentNode, "a", "class", "heroPickerIconLink");
 
@@ -28,13 +30,13 @@ namespace LetsRoshLibrary.Model
             {
                 var hero = new Hero();
 
-                var detailUrl = heroNode.GetAttributeValue("href", "");
+                var detailUrl = string.Format("{0}?l={1}", heroNode.GetAttributeValue("href", ""), language.Name.ToLower());
 
                 var detailNode = new HtmlParser(detailUrl, DataAccessType.FromWeb).Load().Document.DocumentNode;
 
-                LoadDetail(hero, detailNode);
-
-                LoadSkills(hero, detailNode);
+                hero.LoadDetail(detailNode)
+                    .LoadSkills(detailNode)
+                    .SetLocalization(language);
 
                 list.Add(hero);
             }
@@ -43,7 +45,7 @@ namespace LetsRoshLibrary.Model
             return list;
         }
 
-        public static void LoadDetail(Hero hero,HtmlNode mainNode)
+        private Hero LoadDetail(HtmlNode mainNode)
         {
             try
             {
@@ -57,6 +59,8 @@ namespace LetsRoshLibrary.Model
                 if (heroNameNode == null)
                     throw new Exception("heroNameNode is null");
 
+                Name = heroNameNode.InnerText;
+
                 var imageNode = HtmlParser.GetDescendantsByAttribute(mainNode, "div", "id", "heroTopPortraitContainer")
                                             .FirstOrDefault()
                                             .Descendants("img")
@@ -65,23 +69,20 @@ namespace LetsRoshLibrary.Model
                 if (imageNode == null)
                     throw new Exception("imageNode is null");
 
+                LoadImage(imageNode.GetAttributeValue("src", ""), Name);
+
                 var rolesNode = HtmlParser.GetDescendantsByAttribute(mainNode, "p", "id", "heroBioRoles")
                                             .FirstOrDefault();
 
                 if (rolesNode == null)
                     throw new Exception("rolesNode is null");
 
+                Roles = string.Join(",", rolesNode.InnerText.Split('-').Select(t => t.Trim()));
+
                 var primaryStatsNodes = HtmlParser.GetDescendantsByAttribute(mainNode, "div", "class", "overview_StatVal");
 
                 if (primaryStatsNodes == null)
                     throw new Exception("primaryStatsNode is null");
-
-
-                hero.Name = heroNameNode.InnerText;
-
-                hero.LoadImage(imageNode.GetAttributeValue("src",""));
-
-                hero.Roles = string.Join(",", rolesNode.InnerText.Split('-').Select(t => t.Trim()));
 
 
                 foreach (var node in primaryStatsNodes)
@@ -92,27 +93,27 @@ namespace LetsRoshLibrary.Model
                             switch (attribute.Value)
                             {
                                 case "overview_IntVal":
-                                    hero.Intelligence = node.InnerHtml;
+                                    Intelligence = node.InnerHtml;
                                     break;
 
                                 case "overview_AgiVal":
-                                    hero.Agility = node.InnerHtml;
+                                    Agility = node.InnerHtml;
                                     break;
 
                                 case "overview_StrVal":
-                                    hero.Strength = node.InnerHtml;
+                                    Strength = node.InnerHtml;
                                     break;
 
                                 case "overview_AttackVal":
-                                    hero.Damage = node.InnerHtml;
+                                    Damage = node.InnerHtml;
                                     break;
 
                                 case "overview_SpeedVal":
-                                    hero.MovementSpeed = node.InnerHtml;
+                                    MovementSpeed = node.InnerHtml;
                                     break;
 
                                 case "overview_DefenseVal":
-                                    hero.Armor = node.InnerHtml;
+                                    Armor = node.InnerHtml;
                                     break;
                             }
                     }
@@ -123,23 +124,25 @@ namespace LetsRoshLibrary.Model
                 if (portraitNode == null)
                     throw new Exception("portraitNode is null");
 
-                hero.Portrait = Image.Load(imageNode.GetAttributeValue("src", ""));
+                Portrait = Image.Load(imageNode.GetAttributeValue("src", ""), Name);
 
                 var bioNode = HtmlParser.GetDescendantsByAttribute(mainNode, "div", "id", "bioInner").FirstOrDefault();
 
                 if (bioNode == null)
                     throw new Exception("bioNode is null");
 
-                hero.Bio = bioNode.InnerText.Trim();
+                Bio = bioNode.InnerText.Trim();
 
             }
             catch (Exception ex)
             {
                 throw ex;
             }
+
+            return this;
         }
 
-        public static void LoadSkills(Hero hero,HtmlNode node)
+        private Hero LoadSkills(HtmlNode node = null)
         {
             try
             {
@@ -149,13 +152,6 @@ namespace LetsRoshLibrary.Model
                 {
                     var skill = new Skill();
 
-                    var skillImageNode = HtmlParser.GetDescendantsByAttribute(skillNode, "img", "class", "overviewAbilityImg").FirstOrDefault();
-
-                    if (skillImageNode == null)
-                        throw new Exception("skillImageNode is null");
-
-                    skill.LoadImage(skillImageNode.GetAttributeValue("src",""));
-
                     var skillNameNode = HtmlParser.GetDescendantsByAttribute(skillNode,"div","class","abilityHeaderRowDescription")
                                                     .FirstOrDefault()
                                                     .Descendants("h2")
@@ -164,6 +160,13 @@ namespace LetsRoshLibrary.Model
                         throw new Exception("skillNameNode is null");
 
                     skill.Name = skillNameNode.InnerText;
+
+                    var skillImageNode = HtmlParser.GetDescendantsByAttribute(skillNode, "img", "class", "overviewAbilityImg").FirstOrDefault();
+
+                    if (skillImageNode == null)
+                        throw new Exception("skillImageNode is null");
+
+                    skill.LoadImage(skillImageNode.GetAttributeValue("src", ""), skill.Name);
 
                     var skillDescriptionNode = HtmlParser.GetDescendantsByAttribute(skillNode, "div", "class", "abilityHeaderRowDescription")
                                                     .FirstOrDefault()
@@ -237,7 +240,7 @@ namespace LetsRoshLibrary.Model
 
                     skill.Lore = loreNode.InnerText;
 
-                    hero.Skills.Add(skill);
+                    Skills.Add(skill);
                 }
             }
             catch (Exception ex)
@@ -245,6 +248,16 @@ namespace LetsRoshLibrary.Model
 
                 throw ex;
             }
+
+            return this;
+        }
+
+        public override void SetLocalization(Language language)
+        {
+            Localizations.Add(Localization.Create(language, "Hero", "Roles", Roles));
+            Localizations.Add(Localization.Create(language, "Hero", "Bio", Bio));
+
+            Skills.ForEach(s => s.SetLocalization(language));
         }
     }
 }

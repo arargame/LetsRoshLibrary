@@ -11,7 +11,7 @@ namespace LetsRoshTestApp
     {
         static void Main(string[] args)
         {
-            Hero.Load();
+            Item.Load();
         }
     }
 }

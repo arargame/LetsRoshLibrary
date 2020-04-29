@@ -22,6 +22,8 @@ namespace LetsRoshLibrary.Model
 
         public Image Image { get; set; }
 
+        public List<Localization> Localizations = new List<Localization>();
+
         public BaseObject()
         {
             Id = Guid.NewGuid();
@@ -29,14 +31,19 @@ namespace LetsRoshLibrary.Model
             AddedDate = ModifiedDate = DateTime.Now;
         }
 
-        public void LoadImage(string path)
+        public void LoadImage(string path,string name)
         {
-            Image = Image.Load(path);
+            Image = Image.Load(path,name);
         }
 
-        public async Task LoadImageAsync(string path)
+        public async Task LoadImageAsync(string path,string name)
         {
-            Image = await Image.LoadAsync(path);
+            Image = await Image.LoadAsync(path,name);
+        }
+
+        public virtual void SetLocalization(Language language)
+        {
+
         }
     }
 }

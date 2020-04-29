@@ -15,28 +15,35 @@ namespace LetsRoshLibrary.Model
 
         public byte[] Data { get; set; }
 
-        public Image(string path,byte[] data)
+        public Image(string path,byte[] data,string name)
         {
             Path = path;
 
             Data = data;
         }
 
-        public static Image Load(string path)
+        public static Image Load(string path,string name)
         {
-            byte[] imageAsByteArray;
+            byte[] imageAsByteArray = null;
 
-            using (var webClient = new WebClient())
+            try
             {
-                imageAsByteArray = webClient.DownloadData(path);
+                using (var webClient = new WebClient())
+                {
+                    imageAsByteArray = webClient.DownloadData(path);
+                }
+            }
+            catch (Exception ex)
+            {
+
             }
 
-            return new Image(path, imageAsByteArray);
+            return new Image(path, imageAsByteArray,name);
         }
 
-        public async static Task<Image> LoadAsync(string path)
+        public async static Task<Image> LoadAsync(string path,string name)
         {
-            return await Task.Run(() => Load(path));
+            return await Task.Run(() => Load(path,name));
         }
     }
 }

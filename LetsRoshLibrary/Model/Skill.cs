@@ -14,5 +14,12 @@ namespace LetsRoshLibrary.Model
         public string Extra { get; set; }
         public string Lore { get; set; }
         public string Video { get; set; }
+
+        public override void SetLocalization(Language language)
+        {
+            Localizations.Add(Localization.Create(language, "Skill", "Extra", Extra));
+            Localizations.Add(Localization.Create(language, "Skill", "Description", Description));
+            Localizations.Add(Localization.Create(language, "Skill", "Lore", Lore));
+        }
     }
 }
