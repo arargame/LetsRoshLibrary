@@ -1,4 +1,6 @@
-﻿using System;
+﻿using LetsRoshLibrary.Core.Repository;
+using LetsRoshLibrary.Core.UnitofWork;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -53,11 +55,25 @@ namespace LetsRoshLibrary.Model
 
         public Language() { }
 
-        public Language(string name,string nativeName,string code)
+        public Language(string name, string nativeName, string code)
         {
             Name = name;
             NativeName = nativeName;
             Code = code;
+        }
+
+        public static Language GetFromDb(string name)
+        {
+            Language language = null;
+
+            using (var uow = new Dota2UnitofWork())
+            {
+                var repository = uow.Load<Language>();
+
+                language = repository.Get(l => l.Name == name);
+            }
+
+            return language;
         }
 
     }

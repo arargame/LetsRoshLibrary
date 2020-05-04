@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -15,11 +17,14 @@ namespace LetsRoshLibrary.Model
 
         public byte[] Data { get; set; }
 
+        public Image() { }
         public Image(string path,byte[] data,string name)
         {
             Path = path;
 
             Data = data;
+
+            Name = name;
         }
 
         public static Image Load(string path,string name)
@@ -35,7 +40,7 @@ namespace LetsRoshLibrary.Model
             }
             catch (Exception ex)
             {
-
+                Log.Save(new Log(ex.Message + string.Format(" (path : {0},name : {1})", path, name), LogType.Error));
             }
 
             return new Image(path, imageAsByteArray,name);

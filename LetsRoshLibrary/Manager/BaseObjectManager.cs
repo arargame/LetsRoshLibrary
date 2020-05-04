@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LetsRoshLibrary.Model
+namespace LetsRoshLibrary.Manager
 {
-    public class Role
+    public class BaseObjectManager
     {
-        public string Name { get; set; }
+
     }
 }

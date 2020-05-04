@@ -1,14 +1,21 @@
 ﻿using HtmlAgilityPack;
+using LetsRoshLibrary.Core.Repository;
+using LetsRoshLibrary.Core.UnitofWork;
 using LetsRoshLibrary.Core.Web;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Diagnostics;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace LetsRoshLibrary.Model
@@ -55,6 +62,7 @@ namespace LetsRoshLibrary.Model
 
     public class Item : BaseObject
     {
+        [Required]
         public string LinkParameter { get; set; }
         public string Cost { get; set; }
         public string Attribute { get; set; }
@@ -67,10 +75,73 @@ namespace LetsRoshLibrary.Model
         public string Qual { get; set; }
         public string Components { get; set; }
 
+        public Item() { }
 
-        public static List<Item> Load(Language language = null)
+        public static List<Item> SelectFromDb(Expression<Func<Item, bool>> filter = null, params string[] includes)
         {
-            var list = new List<Item>();
+            List<Item> items = new List<Item>();
+
+            using (var uow = new Dota2UnitofWork())
+            {
+                items = new ItemRepository(uow.Context).Select(filter, includes).ToList();
+            }
+
+            return items;
+        }
+
+        public static Item GetFromDb(Expression<Func<Item, bool>> filter, params string[] includes)
+        {
+            Item entity = null;
+
+            using (var uow = new Dota2UnitofWork())
+            {
+                entity = uow.Load<Item>().Get(filter, includes);
+            }
+
+            return entity;
+        }
+
+        public static bool DeleteFromDb(Item item)
+        {
+            return DeleteFromDb(i => i.Id == item.Id);
+        }
+
+        public static bool DeleteFromDb(Expression<Func<Item, bool>> filter)
+        {
+            var isCommitted = false;
+
+            using (var uow = new Dota2UnitofWork())
+            {
+                var itemRepository = new ItemRepository(uow.Context);
+
+                var entity = itemRepository.Get(filter, "Image", "Localizations");
+
+                itemRepository.Delete(entity);
+
+                isCommitted = uow.Commit();
+            }
+
+            return isCommitted;
+        }
+
+
+        public static bool SaveToDb(Item item)
+        {
+            var isCommitted = false;
+
+            using (var uow = new Dota2UnitofWork())
+            {
+                new ItemRepository(uow.Context).Insert(item);
+
+                isCommitted = uow.Commit();
+            }
+
+            return isCommitted;
+        }
+
+        public static async Task<List<Item>> Load(string linkParameter = null,Language language = null)
+        {
+            var itemList = new List<Item>();
 
             var jsonResult = "";
 
@@ -78,101 +149,167 @@ namespace LetsRoshLibrary.Model
             {
                 using (var webClient = new WebClient())
                 {
-                    jsonResult = webClient.DownloadString("http://www.dota2.com/jsfeed/heropediadata?feeds=itemdata&v=5800661HyAlWAmyrl84&l=english");
+                    jsonResult = await Task.Run(() => webClient.DownloadString("http://www.dota2.com/jsfeed/heropediadata?feeds=itemdata&v=5800661HyAlWAmyrl84&l=english")).ConfigureAwait(false);
                 }
 
                 var resultToJObject = JObject.Parse(jsonResult);
 
+                var taskList = new List<Task>();
+
+                Stopwatch sw = new Stopwatch();
+                sw.Start();
+
                 foreach (JProperty child in resultToJObject["itemdata"].Children())
                 {
-                    var item = new Item();
+                    if (!string.IsNullOrWhiteSpace(linkParameter) && child.Name != linkParameter)
+                    {
+                        continue;
+                    }
 
-                    item.Name = child.Value["dname"].ToString();
+                    var action = new Action(()=> 
+                    {
+                        var item = new Item();
 
-                    item.LinkParameter = child.Name;
+                        item.Name = child.Value["dname"].ToString();
 
-                    item.Cost = child.Value["cost"].ToString();
+                        item.LinkParameter = child.Name;
 
-                    item.ManaCost = child.Value["mc"].ToString();
+                        item.Cost = child.Value["cost"].ToString();
 
-                    item.CoolDown = child.Value["cd"].ToString();
+                        item.ManaCost = child.Value["mc"].ToString();
 
-                    item.Lore = child.Value["lore"].ToString();
+                        item.CoolDown = child.Value["cd"].ToString();
 
-                    item.LoadImage(string.Format("http://cdn.dota2.com/apps/dota2/images/items/{0}", child.Value["img"].ToString()),item.LinkParameter);
+                        item.Lore = child.Value["lore"].ToString();
 
-                    var attributeHtml = child.Value["attrib"].ToString();
+                        item.LoadImage(string.Format("http://cdn.dota2.com/apps/dota2/images/items/{0}", child.Value["img"].ToString()), item.LinkParameter);
 
-                    var doc = new HtmlDocument();
-                    doc.LoadHtml(attributeHtml);
+                        var attributeHtml = child.Value["attrib"].ToString();
 
-                    item.Attribute = string.Join(",", doc.DocumentNode.InnerText.Split('\n'));
+                        var doc = new HtmlDocument();
+                        doc.LoadHtml(attributeHtml);
 
-                    var doc2 = new HtmlDocument();
-                    doc2.LoadHtml(child.Value["desc"].ToString());
+                        item.Attribute = string.Join(",", doc.DocumentNode.InnerText.Split('\n'));
 
-                    item.Description = doc2.DocumentNode.InnerText;
+                        var doc2 = new HtmlDocument();
+                        doc2.LoadHtml(child.Value["desc"].ToString());
 
-                    item.Notes = child.Value["notes"].ToString();
+                        item.Description = doc2.DocumentNode.InnerText;
 
-                    item.Qual = child.Value["qual"].ToString();
+                        item.Notes = child.Value["notes"].ToString();
 
-                    item.Components = string.Join(",", child.Value["components"].Children().Select(c => c.Value<string>()));
+                        item.Qual = child.Value["qual"].ToString();
 
-                    list.Add(item);
+                        item.Components = string.Join(",", child.Value["components"].Children().Select(c => c.Value<string>()));
+
+                        Console.WriteLine("The item with '{0}' name has been fetched", item.Name);
+
+                        itemList.Add(item);
+                    });
+
+
+                    //await Task.Run(() => action());
+                    
+
+                    taskList.Add(Task.Run(() =>
+                    {
+                        action();   
+                    }));
                 }
 
+                await Task.WhenAll(taskList);
+
+                sw.Stop();
+                Console.WriteLine(sw.Elapsed);
+
+                //00:00:12.3362018
+                //00:00:11.6084804
             }
             catch (Exception ex)
             {
-
-                throw ex;  
+                Log.Save(new Log(ex.Message,LogType.Error));
             }
 
+
+            
 
             try
             {
 
-                foreach (var lang in Language.LanguagesFromDota2)
+                var languages = language != null ? Language.LanguagesFromDota2.Where(l => language.Name == l.Name) : Language.LanguagesFromDota2;
+
+                var taskList = new List<Task>();
+
+                foreach (var lang in languages)
                 {
-                    foreach (var item in list)
+                    using (var webClient = new WebClient())
                     {
-                        using (var webClient = new WebClient())
+                        jsonResult = await Task.Run(() => webClient.DownloadString(string.Format("http://www.dota2.com/jsfeed/heropediadata?feeds=itemdata&v=5800661HyAlWAmyrl84&l={0}", lang.Name)));
+                    }
+
+                    var resultToJObject = JObject.Parse(jsonResult);
+
+                    var dataGroup = resultToJObject["itemdata"].Children()
+                        .Select(c => new
                         {
-                            jsonResult = webClient.DownloadString(string.Format("http://www.dota2.com/jsfeed/heropediadata?feeds=itemdata&v=5800661HyAlWAmyrl84&l={0}", lang.Name));
-                        }
+                            Name = (c as JProperty).Name,
+                            ChildValues = (c as JProperty).Value
+                        });
 
-                        var resultToJObject = JObject.Parse(jsonResult);
 
-                        foreach (JProperty child in resultToJObject["itemdata"].Children())
+                    foreach (var item in itemList)
+                    {
+                        taskList.Add(Task.Run(() =>
                         {
-                            item.Localizations.Add(Localization.Create(language, "Item", "Lore", child.Value["lore"].ToString()));
 
-                            var attributeHtml = child.Value["attrib"].ToString();
+                            foreach (var data in dataGroup.Where(dg=>dg.Name == item.LinkParameter))
+                            { 
+                                try
+                                {
+                                    if (!string.IsNullOrEmpty(data.ChildValues["lore"].ToString()))
+                                        item.AddLocalization(Localization.Create(item, lang, "Item", "Lore", data.ChildValues["lore"].ToString()));
 
-                            var doc = new HtmlDocument();
-                            doc.LoadHtml(attributeHtml);
+                                    var attributeHtml = data.ChildValues["attrib"].ToString();
 
-                            item.Localizations.Add(Localization.Create(language, "Item", "Attribute", string.Join(",", doc.DocumentNode.InnerText.Split('\n'))));
+                                    var doc = new HtmlDocument();
 
-                            var doc2 = new HtmlDocument();
-                            doc2.LoadHtml(child.Value["desc"].ToString());
+                                    doc.LoadHtml(attributeHtml);
 
-                            item.Localizations.Add(Localization.Create(language, "Item", "Description", doc2.DocumentNode.InnerText));
+                                    var itemAttributes = string.Join(",", doc.DocumentNode.InnerText.Split('\n'));
 
-                            item.Localizations.Add(Localization.Create(language, "Item", "Notes", child.Value["notes"].ToString()));
+                                    if (!string.IsNullOrEmpty(itemAttributes))
+                                        item.AddLocalization(Localization.Create(item, lang, "Item", "Attribute", itemAttributes));
 
-                            item.Localizations.Add(Localization.Create(language, "Item", "Qual", child.Value["qual"].ToString()));
+                                    var doc2 = new HtmlDocument();
+                                    doc2.LoadHtml(data.ChildValues["desc"].ToString());
 
-                            item.Localizations.Add(Localization.Create(language, "Item", "Components", string.Join(",", child.Value["components"].Children().Select(c => c.Value<string>()))));
-                        }
+                                    if (doc2 == null || doc2.DocumentNode == null)
+                                        throw new Exception("buırda");
+
+                                    if (!string.IsNullOrEmpty(doc2.DocumentNode.InnerText))
+                                        item.AddLocalization(Localization.Create(item, lang, "Item", "Description", doc2.DocumentNode.InnerText));
+
+                                    if (!string.IsNullOrEmpty(data.ChildValues["notes"].ToString()))
+                                        item.AddLocalization(Localization.Create(item, lang, "Item", "Notes", data.ChildValues["notes"].ToString()));
+
+                                    Console.WriteLine("Localizations  : of '{0}' language : {1}", item.Name, lang.Name);
+                                }
+                                catch (Exception ex)
+                                {
+                                    throw ex;
+                                }
+
+
+                            }
+                        }));
                     }
                 }
+
+                await Task.WhenAll(taskList);
             }
             catch (Exception ex)
             {
-
-                throw ex;
+                Log.Save(new Log(ex.Message, LogType.Error));
             }
 
 
@@ -200,7 +337,7 @@ namespace LetsRoshLibrary.Model
             //    LoadDetail(item, detailNode);
             //}
 
-            return list;
+            return itemList;
         }
 
         //public static void LoadDetailFromDotaBuff(Item item, HtmlNode mainNode)

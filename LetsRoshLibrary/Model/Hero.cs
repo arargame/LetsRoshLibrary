@@ -2,6 +2,7 @@
 using LetsRoshLibrary.Core.Web;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,9 +12,18 @@ namespace LetsRoshLibrary.Model
     public class Hero : Character
     {
         public string Roles { get; set; }
+
+        public Guid? PortraitId { get; set; }
+
+        [ForeignKey("PortraitId")]
         public Image Portrait { get; set; }
 
-        public List<Skill> Skills = new List<Skill>();
+        public virtual ICollection<Skill> Skills { get; set; }
+
+        public Hero() 
+        {
+            Skills = new List<Skill>();
+        }
 
         public static List<Hero> Load(Language language = null)
         {
@@ -254,10 +264,10 @@ namespace LetsRoshLibrary.Model
 
         public override void SetLocalization(Language language)
         {
-            Localizations.Add(Localization.Create(language, "Hero", "Roles", Roles));
-            Localizations.Add(Localization.Create(language, "Hero", "Bio", Bio));
+            Localizations.Add(Localization.Create(this,language, "Hero", "Roles", Roles));
+            Localizations.Add(Localization.Create(this,language, "Hero", "Bio", Bio));
 
-            Skills.ForEach(s => s.SetLocalization(language));
+            Skills.ToList().ForEach(s => s.SetLocalization(language));
         }
     }
 }
