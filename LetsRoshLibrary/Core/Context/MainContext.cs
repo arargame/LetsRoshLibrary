@@ -104,10 +104,6 @@ namespace LetsRoshLibrary.Core.Context
                 .Property(i => i.LinkParameter)
                 .HasMaxLength(21);
 
-            modelBuilder.Entity<Item>()
-                .HasIndex(i => i.LinkParameter)
-                .IsUnique(true);
-
             modelBuilder.Entity<Language>()
                 .Property(i => i.Name)
                 .IsUnicode();
@@ -117,6 +113,14 @@ namespace LetsRoshLibrary.Core.Context
                 .WithRequired()
                 .HasForeignKey(l => l.BaseObjectId)
                 .WillCascadeOnDelete(true);
+
+            modelBuilder.Entity<Image>()
+                .HasKey(i => i.Id)
+                .HasRequired(i => i.BaseObject)
+                .WithOptional()
+                .Map(m => m.MapKey("BaseObjectId"))
+                .WillCascadeOnDelete(true);
+
         }
     }
 }

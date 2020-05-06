@@ -11,6 +11,7 @@ namespace LetsRoshLibrary.Model
     public class Class1
     {
         [Key]
+        [ForeignKey("BaseObject")]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public Guid Id { get; set; }
 
@@ -21,5 +22,10 @@ namespace LetsRoshLibrary.Model
 
         [ForeignKey("LanguageId")]
         public virtual Language Language { get; set; }
+
+
+
+        [Required]
+        public BaseObject BaseObject { get; set; }
     }
 }

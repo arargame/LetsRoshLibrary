@@ -17,7 +17,7 @@ namespace LetsRoshLibrary.Model
             new Language("czech","Čeština","cs"),
             new Language("danish","Dansk",""),
             new Language("dutch","Nederlands",""),
-            new Language("english","English",""),
+            new Language("english","English","en"),
             new Language("finnish","Suomi",""),
             new Language("french","Français","fr"),
             new Language("german","Deutsch","de"),
@@ -48,7 +48,7 @@ namespace LetsRoshLibrary.Model
         {
             get
             {
-                return LanguagesFromDota2.Where(l => l.Code == "en")
+                return LanguagesFromDota2.Where(l => l.Name == "english")
                                             .FirstOrDefault();
             }
         }

@@ -85,7 +85,7 @@ namespace LetsRoshLibrary.Core.Repository
             }
             catch (Exception ex)
             {
-                Log.Save(new Log(description: string.Format("Class : {0}, Error : {1}", typeof(T).BaseType.FullName, ex.ToString()), entityId: entityId.ToString()));
+                Log.Save(new Log(description: string.Format("Class : {0}, Error : {1}", typeof(T).FullName, ex.ToString()), entityId: entityId.ToString()));
             }
 
             return DbSet.Find(entityId);
@@ -143,6 +143,7 @@ namespace LetsRoshLibrary.Core.Repository
             try
             {
                 DbSet.Add(entity);
+
                 var state = Context.Entry(entity).State;
 
                 isInserted = true;
@@ -176,9 +177,7 @@ namespace LetsRoshLibrary.Core.Repository
             }
             catch (Exception ex)
             {
-                Log.Save(new Log("Repository",
-                                    "Update",
-                                    string.Format("Class : {0}, Error : {1}", entity.GetType().BaseType.FullName, ex.ToString()),
+                Log.Save(new Log(string.Format("Class : {0}, Error : {1}", entity.GetType().FullName, ex.ToString()),
                                     LogType.Error,
                                     entity.Id.ToString()));
             }

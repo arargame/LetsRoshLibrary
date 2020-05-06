@@ -63,6 +63,7 @@ namespace LetsRoshLibrary.Model
     public class Item : BaseObject
     {
         [Required]
+        [Index(IsUnique = true)]
         public string LinkParameter { get; set; }
         public string Cost { get; set; }
         public string Attribute { get; set; }

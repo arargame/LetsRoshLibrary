@@ -14,6 +14,7 @@ namespace LetsRoshLibrary.Model
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        [Index(IsClustered = false)]
         public Guid Id { get; set; }
 
         [StringLength(50)]
@@ -41,10 +42,17 @@ namespace LetsRoshLibrary.Model
         [Timestamp]
         public Byte[] Timestamp { get; set; }
 
+
         public Guid? ImageId { get; set; }
 
         [ForeignKey("ImageId")]
         public virtual Image Image { get; set; }
+
+
+        public Guid? Class1Id { get; set; }
+
+        [ForeignKey("Class1Id")]
+        public virtual Class1 Class1 { get; set; }
 
         public virtual ICollection<Localization> Localizations { get; set; }
 

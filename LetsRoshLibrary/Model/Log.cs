@@ -3,6 +3,8 @@ using LetsRoshLibrary.Core.Connection;
 using LetsRoshLibrary.Core.UnitofWork;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -26,6 +28,8 @@ namespace LetsRoshLibrary.Model
 
         public string Category { get; set; }
 
+        [StringLength(36)]
+        [Index()]
         public string EntityId { get; set; }
 
         public Log()
