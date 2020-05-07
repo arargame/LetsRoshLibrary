@@ -13,7 +13,7 @@ namespace LetsRoshLibrary.Model
 {
     public class Image : BaseObject
     {
-        public BaseObject BaseObject { get; set; }
+        //public BaseObject BaseObject { get; set; }
 
         public string Path { get; set; }
 

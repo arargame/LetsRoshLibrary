@@ -114,13 +114,18 @@ namespace LetsRoshLibrary.Core.Context
                 .HasForeignKey(l => l.BaseObjectId)
                 .WillCascadeOnDelete(true);
 
-            modelBuilder.Entity<Image>()
-                .HasKey(i => i.Id)
-                .HasRequired(i => i.BaseObject)
-                .WithOptional()
-                .Map(m => m.MapKey("BaseObjectId"))
-                .WillCascadeOnDelete(true);
+            //modelBuilder.Entity<Image>()
+            //    .HasKey(i => i.Id)
+            //    .HasRequired(i => i.BaseObject)
+            //    .WithOptional()
+            //    .Map(m => m.MapKey("BaseObjectId"))
+            //    .WillCascadeOnDelete(true);
 
+            //modelBuilder.Entity<BaseObject>()
+            //    .HasOptional(bo => bo.Image)
+            //    .WithMany()
+            //    .HasForeignKey(x => x.ImageId)
+            //    .WillCascadeOnDelete(true);
         }
     }
 }

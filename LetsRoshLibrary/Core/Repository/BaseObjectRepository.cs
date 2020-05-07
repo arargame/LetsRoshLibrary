@@ -21,7 +21,10 @@ namespace LetsRoshLibrary.Core.Repository
 
             foreach (var localization in entity.Localizations)
             {
-                localization.Language = new Repository<Language>(Context).Get(l => l.Name == localization.Language.Name);
+                var languageRepo = new Repository<Language>(Context);
+
+                if (languageRepo.Any(l => l.Name == localization.Language.Name))
+                    localization.Language = new Repository<Language>(Context).Get(l => l.Name == localization.Language.Name);
             }
 
             return isInserted;

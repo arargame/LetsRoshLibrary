@@ -3,6 +3,7 @@ using LetsRoshLibrary.Model;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
+using System.Data.Entity.Infrastructure;
 using System.Data.Entity.Validation;
 using System.Linq;
 using System.Text;
@@ -44,15 +45,26 @@ namespace LetsRoshLibrary.Core.UnitofWork
                 using (TransactionScope tScope = new TransactionScope())
                 {
                     Context.SaveChanges();
+
                     tScope.Complete();
+
                     return true;
                 }
             }
-            catch (DbEntityValidationException e)
+            catch (DbUpdateConcurrencyException ex)
+            {
+                // Update original values from the database
+                var entry = ex.Entries.Single();
+
+                entry.OriginalValues.SetValues(entry.GetDatabaseValues());
+
+                return false;
+            }
+            catch (DbEntityValidationException ex)
             {
                 var message = "";
 
-                foreach (var eve in e.EntityValidationErrors.Take(1))
+                foreach (var eve in ex.EntityValidationErrors.Take(1))
                 {
                     message += string.Format("Entity of type \"{0}\" in state \"{1}\" has the following validation errors:",
                         eve.Entry.Entity.GetType().Name, eve.Entry.State);

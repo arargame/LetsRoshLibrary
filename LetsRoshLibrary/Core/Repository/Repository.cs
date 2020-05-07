@@ -161,6 +161,58 @@ namespace LetsRoshLibrary.Core.Repository
             return isInserted;
         }
 
+        public bool Update(T entity,
+            Expression<Func<T,bool>> filter,
+            List<string> includes,
+            Action<T> actionToUpdateNavigations = null,
+            bool checkAllProperties = false,
+            params string[] modifiedProperties)
+        {
+            try
+            {
+                var existingEntity = Get(filter, includes.ToArray());
+
+                var ee = Context.Entry(existingEntity);
+
+                modifiedProperties = checkAllProperties ? modifiedProperties.Union(ee.OriginalValues.PropertyNames)
+                                                        .Distinct()
+                                                        .ToArray() : modifiedProperties;
+
+                foreach (var property in modifiedProperties)
+                {
+                    if (new[] { "Id" }.Union(includes).Any(p => p == property))
+                        continue;
+
+                    typeof(T).GetProperty(property)
+                        .SetValue(existingEntity, typeof(T).GetProperty(property).GetValue(entity, null));
+                }
+
+                if (modifiedProperties.Any())
+                {
+                    entity.ModifiedDate = DateTime.Now;
+
+                    if (actionToUpdateNavigations != null)
+                        actionToUpdateNavigations.Invoke(existingEntity);
+
+                    var state = Context.Entry(existingEntity).State;
+
+                    Context.Entry(existingEntity).State = EntityState.Modified;
+
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Save(new Log(ex.Message));
+
+                return false;
+            }
+        }
+
         public bool Update(T entity)
         {
             bool isUpdated = false;
