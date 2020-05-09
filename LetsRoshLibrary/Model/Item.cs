@@ -13,6 +13,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Net;
+using System.Runtime.Remoting.Contexts;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
@@ -107,19 +108,32 @@ namespace LetsRoshLibrary.Model
             return DeleteFromDb(i => i.Id == item.Id);
         }
 
+        //Generic yapılabilir
         public static bool DeleteFromDb(Expression<Func<Item, bool>> filter)
         {
             var isCommitted = false;
 
-            using (var uow = new Dota2UnitofWork())
+            Guid? entityId = null;
+
+            try
             {
-                var itemRepository = new ItemRepository(uow.Context);
+                using (var uow = new Dota2UnitofWork())
+                {
+                    var itemRepository = new ItemRepository(uow.Context);
 
-                var entity = itemRepository.Get(filter, "Image", "Localizations");
+                    var entity = itemRepository.Get(filter, ItemRepository.Includes);
 
-                itemRepository.Delete(entity);
+                    entityId = entity?.Id;
 
-                isCommitted = uow.Commit();
+                    if (!itemRepository.Delete(entity))
+                        throw new Exception("ItemRepository Delete Exception");
+
+                    isCommitted = uow.Commit();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Save(new Log(ex.Message, entityId: entityId?.ToString()));
             }
 
             return isCommitted;
@@ -133,6 +147,34 @@ namespace LetsRoshLibrary.Model
             using (var uow = new Dota2UnitofWork())
             {
                 new ItemRepository(uow.Context).Insert(item);
+
+                isCommitted = uow.Commit();
+            }
+
+            return isCommitted;
+        }
+
+        public static bool UpdateDb(Item item,
+            bool checkAllProperties = false,
+            params string[] modifiedProperties)
+        {
+            var isCommitted = false;
+
+            using (var uow = new Dota2UnitofWork())
+            {
+                new ItemRepository(uow.Context)
+                    .Update(item,
+                        i => i.LinkParameter == item.LinkParameter,
+                        ItemRepository.Includes,
+                        new Action<Item>((existingItem) => 
+                        {
+                            new BaseObjectRepository(uow.Context).UpdateNavigations(existingItem, item);
+
+
+
+                        }),
+                        checkAllProperties,
+                        modifiedProperties);
 
                 isCommitted = uow.Commit();
             }

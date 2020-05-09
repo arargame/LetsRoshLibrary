@@ -53,6 +53,7 @@ namespace LetsRoshLibrary.Model
 
         [ForeignKey("Class1Id")]
         public virtual Class1 Class1 { get; set; }
+        public virtual string UniqueValue { get; }
 
         public virtual ICollection<Localization> Localizations { get; set; }
 

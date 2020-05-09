@@ -25,6 +25,14 @@ namespace LetsRoshLibrary.Model
 
         public string Value { get; set; }
 
+        public override string UniqueValue
+        {
+            get
+            {
+                return string.Format("{0}{1}{2}", ClassName, PropertyName, LanguageId != Guid.Empty ? LanguageId : Language?.Id);
+            }
+        }
+
         public Localization() { }
 
         public static Localization Create(BaseObject baseObject,Language language, string className, string propertyName, string value)

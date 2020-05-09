@@ -27,9 +27,30 @@ namespace LetsRoshLibrary.Core.Repository
             }
             catch (Exception ex)
             {
-                Log.Save(new Log(string.Format("Class : {0}, Error : {1}", typeof(T).BaseType.FullName, ex.ToString())));
+                Log.Save(new Log(string.Format("Class : {0}, Error : {1}", typeof(T).FullName, ex.ToString())));
             }
 
+        }
+
+        public T GetEntityFromContext(T entity)
+        {
+            return Context.ChangeTracker
+                        .Entries()
+                        .Select(entityEntry => (entityEntry.Entity as BaseObject))
+                        .FirstOrDefault(e => e.Id == entity.Id) as T;
+        }
+
+        public void ChangeEntityState(T entity, EntityState entityState)
+        {
+            if (GetEntityFromContext(entity) != null)
+                throw new Exception(string.Format("The state of the entity with {0} type,{1} Id has already changed", entity.GetType().Name, entity.Id));
+
+            Context.Entry(entity).State = entityState;
+        }
+
+        public EntityState GetEntityState(T entity)
+        {
+            return Context.Entry(entity).State;
         }
 
         public bool Any(Expression<Func<T,bool>> filter = null)
@@ -42,7 +63,7 @@ namespace LetsRoshLibrary.Core.Repository
             }
             catch (Exception ex)
             {
-                Log.Save(new Log(string.Format("Class : {0}, Error : {1}", typeof(T).BaseType.FullName, ex.ToString())));
+                Log.Save(new Log(string.Format("Class : {0}, Error : {1}", typeof(T).FullName, ex.ToString())));
             }
 
             return false;
@@ -101,6 +122,7 @@ namespace LetsRoshLibrary.Core.Repository
             return query;
         }
 
+        //https://docs.microsoft.com/en-us/ef/core/querying/tracking
         public IQueryable<T> Select(Expression<Func<T, bool>> filter = null, params string[] includes)
         {
             try
@@ -116,7 +138,7 @@ namespace LetsRoshLibrary.Core.Repository
             }
             catch (Exception ex)
             {
-                Log.Save(new Log(string.Format("Class : {0}, Error : {1}", typeof(T).BaseType.FullName, ex.ToString())));
+                Log.Save(new Log(string.Format("Class : {0}, Error : {1}", typeof(T).FullName, ex.ToString())));
             }
 
             return DbSet;
@@ -130,6 +152,9 @@ namespace LetsRoshLibrary.Core.Repository
             });
         }
 
+        public virtual void DeleteDependencies(T entity) { }
+
+        public virtual void InsertDependencies(T entity) { }
 
         public virtual bool Insert(T entity)
         {
@@ -142,28 +167,51 @@ namespace LetsRoshLibrary.Core.Repository
 
             try
             {
-                DbSet.Add(entity);
+                InsertDependencies(entity);
+
+                //DbSet.Add(entity);
+                ChangeEntityState(entity,EntityState.Added);
 
                 var state = Context.Entry(entity).State;
 
                 isInserted = true;
 
-                foreach (var ent in Context.ChangeTracker.Entries())
+                if (isInserted)
                 {
-                    Console.WriteLine(ent.GetType().Name + " : " + ent.State);
+                    var message = new
+                    {
+                        Count = Context.ChangeTracker.Entries().Count(),
+                        Description = string.Join(",", Context.ChangeTracker.Entries().Select(e => string.Format("{0}:{1}", e.Entity.GetType().Name, e.State)))
+                    };
+
+                    if (entity.GetType().Name != "Log")
+                        Log.Save(new Log(string.Format("In insertion process {0} entities was affected.Message : {1}", message.Count, message.Description), LogType.Info, entity.Id.ToString()));
+
+                    Console.WriteLine(string.Format("In insertion process {0} entities was affected.Message : {1}", message.Count, message.Description));
+
+                    foreach (var e in Context.ChangeTracker.Entries())
+                    {
+                        Console.WriteLine("{0}:{1}", e.Entity.GetType().Name, e.State);
+                    }
                 }
             }
             catch (Exception ex)
             {
-                Log.Save(new Log(description: string.Format("Class : {0}, Error : {1}", entity.GetType().BaseType.FullName, ex.ToString()), entityId: entity.Id.ToString()));
+                Log.Save(new Log(description: string.Format("Class : {0}, Error : {1}", entity.GetType().FullName, ex.ToString()), entityId: entity.Id.ToString()));
             }
 
             return isInserted;
         }
 
-        public bool Update(T entity,
+
+        public virtual bool UpdateNavigations(T existing, T local)
+        {
+            return false;
+        }
+
+        public virtual bool Update(T entity,
             Expression<Func<T,bool>> filter,
-            List<string> includes,
+            string[] includes,
             Action<T> actionToUpdateNavigations = null,
             bool checkAllProperties = false,
             params string[] modifiedProperties)
@@ -194,9 +242,11 @@ namespace LetsRoshLibrary.Core.Repository
                     if (actionToUpdateNavigations != null)
                         actionToUpdateNavigations.Invoke(existingEntity);
 
-                    var state = Context.Entry(existingEntity).State;
+                    //var state = Context.Entry(existingEntity).State;
 
-                    Context.Entry(existingEntity).State = EntityState.Modified;
+                    //Context.Entry(existingEntity).State = EntityState.Modified;
+
+                    Update(existingEntity);
 
                     return true;
                 }
@@ -213,7 +263,7 @@ namespace LetsRoshLibrary.Core.Repository
             }
         }
 
-        public bool Update(T entity)
+        public virtual bool Update(T entity)
         {
             bool isUpdated = false;
 
@@ -237,6 +287,7 @@ namespace LetsRoshLibrary.Core.Repository
             return isUpdated;
         }
 
+        //Bütün neslerin bağımsız silinebilmesi için fonksiyonlar yap ve servise ekle
         public virtual bool Delete(T entity)
         {
             bool isDeleted = false;
@@ -248,9 +299,25 @@ namespace LetsRoshLibrary.Core.Repository
                     DbSet.Attach(entity);
                 }
 
-                DbSet.Remove(entity);
+                DeleteDependencies(entity);
+                //DbSet.Remove(entity);
+                ChangeEntityState(entity,EntityState.Deleted);
 
                 isDeleted = true;
+
+                if (isDeleted)
+                {
+                    var message = new
+                    {
+                        Count = Context.ChangeTracker.Entries().Count(),
+                        Description = string.Join(",", Context.ChangeTracker.Entries().Select(e => string.Format("{0}:{1}", e.Entity.GetType().Name, e.State)))
+                    };
+
+                    if (entity.GetType().Name != "Log")
+                        Log.Save(new Log(string.Format("In deleting process {0} entities was affected.Message : {1}", message.Count, message.Description), LogType.Info, entity.Id.ToString()));
+
+                    Console.WriteLine(string.Format("In deleting process {0} entities was affected.Message : {1}", message.Count, message.Description));
+                }
             }
             catch (Exception ex)
             {

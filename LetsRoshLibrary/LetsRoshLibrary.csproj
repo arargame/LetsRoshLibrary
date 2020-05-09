@@ -63,8 +63,11 @@
     <Compile Include="Core\Connection\CustomConnection.cs" />
     <Compile Include="Core\Context\MainContext.cs" />
     <Compile Include="Core\Repository\BaseObjectRepository.cs" />
+    <Compile Include="Core\Repository\ImageRepository.cs" />
     <Compile Include="Core\Repository\IRepository.cs" />
     <Compile Include="Core\Repository\ItemRepository.cs" />
+    <Compile Include="Core\Repository\LanguageRepository.cs" />
+    <Compile Include="Core\Repository\LocalizationRepository.cs" />
     <Compile Include="Core\Repository\Repository.cs" />
     <Compile Include="Core\UnitofWork\Dota2UnitofWork.cs" />
     <Compile Include="Core\UnitofWork\IUnitofWork.cs" />

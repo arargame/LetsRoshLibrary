@@ -17,12 +17,16 @@ namespace LetsRoshTestApp
     {
         static void Main()
         {
+           // var yy = Item.DeleteFromDb(i => i.LinkParameter == "blink");
+
             using (var uow = new Dota2UnitofWork())
             {
+                var langRepo = new LanguageRepository(uow.Context);
+
                 foreach (var language in Language.LanguagesFromDota2)
                 {
-                    if (!uow.Load<Language>().Any(l => l.Name == language.Name))
-                        uow.Load<Language>().Insert(language);
+                    if (!langRepo.Any(l => l.Name == language.Name))
+                        langRepo.Insert(language);
                 }
 
                 uow.Commit();
@@ -41,6 +45,14 @@ namespace LetsRoshTestApp
             };
 
             item2.AddLocalization(Localization.Create(item2,Language.DefaultLanguage,"classname","properttyname","value"));
+            item2.AddLocalization(Localization.Create(item2, Language.DefaultLanguage, "classname2", "properttyname2", "value2"));
+
+            //item2.Lore = "Lorem ipsum" + DateTime.Now;
+
+            //var b23 = Item.UpdateDb(item2, false, "Lore");
+
+            var xxx = Item.SaveToDb(item2);
+
 
             using (var context = new MainContext())
             {
@@ -62,7 +74,7 @@ namespace LetsRoshTestApp
 
                 item2.Lore = "Lorem ipsum" + DateTime.Now;
 
-                repo.Update(item2, i => i.LinkParameter == item2.LinkParameter, new List<string>() { "Localizations", "Image" },
+                repo.Update(item2, i => i.LinkParameter == item2.LinkParameter, ItemRepository.Includes,
                     new Action<Item>((existingItem)=> 
                     {
                         if (existingItem.Image == null)
