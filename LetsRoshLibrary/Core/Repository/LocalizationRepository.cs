@@ -15,6 +15,19 @@ namespace LetsRoshLibrary.Core.Repository
 
         }
 
+        public static string[] Includes
+        {
+            get
+            {
+                return BaseObjectRepository.Includes;
+            }
+        }
+
+        public override string[] GetIncludes()
+        {
+            return Includes;
+        }
+
         public override void InsertDependencies(Localization entity)
         {
             var languageRepository = new LanguageRepository(Context);
@@ -29,7 +42,8 @@ namespace LetsRoshLibrary.Core.Repository
                     entity.Language = languageEntityFromContext;
             }
             else
-                languageRepository.ChangeEntityState(entity.Language, EntityState.Added);
+                languageRepository.Create(entity.Language);
+                //languageRepository.ChangeEntityState(entity.Language, EntityState.Added);
         }
 
         //public override bool Insert(Localization entity)
@@ -45,5 +59,6 @@ namespace LetsRoshLibrary.Core.Repository
         {
             new LanguageRepository(Context).ChangeEntityState(entity.Language,EntityState.Unchanged);
         }
+
     }
 }

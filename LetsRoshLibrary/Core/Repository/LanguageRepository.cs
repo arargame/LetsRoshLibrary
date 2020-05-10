@@ -15,9 +15,15 @@ namespace LetsRoshLibrary.Core.Repository
 
         }
 
+        public override Language GetUnique(Language entity, bool withIncludes = false)
+        {
+            return Get(l => l.Name == entity.Name);
+        }
+
+
         //public override void InsertDependencies(Language entity)
         //{
-  
+
         //}
         //public override bool Insert(Language entity)
         //{

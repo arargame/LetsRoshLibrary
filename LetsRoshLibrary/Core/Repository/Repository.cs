@@ -32,6 +32,19 @@ namespace LetsRoshLibrary.Core.Repository
 
         }
 
+        public void ShowChangeTrackerEntriesStates()
+        {
+            foreach (var e in Context.ChangeTracker.Entries())
+            {
+                Console.WriteLine("{0}:{1}", e.Entity.GetType().Name, e.State);
+            }
+        }
+
+        public virtual string[] GetIncludes()
+        {
+            return null;
+        }
+
         public T GetEntityFromContext(T entity)
         {
             return Context.ChangeTracker
@@ -42,8 +55,8 @@ namespace LetsRoshLibrary.Core.Repository
 
         public void ChangeEntityState(T entity, EntityState entityState)
         {
-            if (GetEntityFromContext(entity) != null)
-                throw new Exception(string.Format("The state of the entity with {0} type,{1} Id has already changed", entity.GetType().Name, entity.Id));
+            //if (GetEntityFromContext(entity) != null)
+            //    throw new Exception(string.Format("The state of the entity with {0} type,{1} Id has already changed", entity.GetType().Name, entity.Id));
 
             Context.Entry(entity).State = entityState;
         }
@@ -67,6 +80,11 @@ namespace LetsRoshLibrary.Core.Repository
             }
 
             return false;
+        }
+
+        public virtual T GetUnique(T entity,bool withIncludes = false)
+        {
+            throw new Exception("");
         }
 
         public T Get(Expression<Func<T, bool>> filter, params string[] includes)
@@ -156,13 +174,18 @@ namespace LetsRoshLibrary.Core.Repository
 
         public virtual void InsertDependencies(T entity) { }
 
-        public virtual bool Insert(T entity)
+        public virtual void UpdateDependencies(T entity) { }
+
+        public virtual bool Create(T entity)
         {
             bool isInserted = false;
 
             entity.Id = Guid.NewGuid();
+
             entity.AddedDate = DateTime.Now;
+
             entity.ModifiedDate = DateTime.Now;
+
             entity.IsActive = true;
 
             try
@@ -189,10 +212,7 @@ namespace LetsRoshLibrary.Core.Repository
 
                     Console.WriteLine(string.Format("In insertion process {0} entities was affected.Message : {1}", message.Count, message.Description));
 
-                    foreach (var e in Context.ChangeTracker.Entries())
-                    {
-                        Console.WriteLine("{0}:{1}", e.Entity.GetType().Name, e.State);
-                    }
+                    ShowChangeTrackerEntriesStates();
                 }
             }
             catch (Exception ex)
@@ -204,9 +224,9 @@ namespace LetsRoshLibrary.Core.Repository
         }
 
 
-        public virtual bool UpdateNavigations(T existing, T local)
+        public virtual void UpdateOrCreateNavigations(T existing, T local)
         {
-            return false;
+
         }
 
         public virtual bool Update(T entity,
@@ -219,6 +239,9 @@ namespace LetsRoshLibrary.Core.Repository
             try
             {
                 var existingEntity = Get(filter, includes.ToArray());
+
+                if (existingEntity == null)
+                    throw new Exception(string.Format("There is no such an entity with following informations ({0},{1})", existingEntity.GetType().Name, existingEntity.Id));
 
                 var ee = Context.Entry(existingEntity);
 
@@ -235,20 +258,12 @@ namespace LetsRoshLibrary.Core.Repository
                         .SetValue(existingEntity, typeof(T).GetProperty(property).GetValue(entity, null));
                 }
 
-                if (modifiedProperties.Any())
+                if (actionToUpdateNavigations != null)
+                    actionToUpdateNavigations.Invoke(existingEntity);
+
+                if (modifiedProperties.Any() || actionToUpdateNavigations!=null)
                 {
-                    entity.ModifiedDate = DateTime.Now;
-
-                    if (actionToUpdateNavigations != null)
-                        actionToUpdateNavigations.Invoke(existingEntity);
-
-                    //var state = Context.Entry(existingEntity).State;
-
-                    //Context.Entry(existingEntity).State = EntityState.Modified;
-
-                    Update(existingEntity);
-
-                    return true;
+                    return Update(existingEntity);
                 }
                 else
                 {
@@ -273,9 +288,12 @@ namespace LetsRoshLibrary.Core.Repository
             {
                 DbSet.Attach(entity);
 
-                Context.Entry(entity).State = EntityState.Modified;
+                //Context.Entry(entity).State = EntityState.Modified;
+                ChangeEntityState(entity,EntityState.Modified);
 
                 isUpdated = true;
+
+                ShowChangeTrackerEntriesStates();
             }
             catch (Exception ex)
             {
@@ -298,7 +316,7 @@ namespace LetsRoshLibrary.Core.Repository
                 {
                     DbSet.Attach(entity);
                 }
-
+                
                 DeleteDependencies(entity);
                 //DbSet.Remove(entity);
                 ChangeEntityState(entity,EntityState.Deleted);
@@ -317,6 +335,8 @@ namespace LetsRoshLibrary.Core.Repository
                         Log.Save(new Log(string.Format("In deleting process {0} entities was affected.Message : {1}", message.Count, message.Description), LogType.Info, entity.Id.ToString()));
 
                     Console.WriteLine(string.Format("In deleting process {0} entities was affected.Message : {1}", message.Count, message.Description));
+
+                    ShowChangeTrackerEntriesStates();
                 }
             }
             catch (Exception ex)

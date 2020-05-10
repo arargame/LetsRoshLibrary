@@ -117,7 +117,7 @@ namespace LetsRoshLibrary.Model
 
                 using (var uow = new Dota2UnitofWork())
                 {
-                    uow.Load<Log>().Insert(log);
+                    uow.Load<Log>().Create(log);
 
                     return uow.Commit();
                 }

@@ -146,7 +146,7 @@ namespace LetsRoshLibrary.Model
 
             using (var uow = new Dota2UnitofWork())
             {
-                new ItemRepository(uow.Context).Insert(item);
+                new ItemRepository(uow.Context).Create(item);
 
                 isCommitted = uow.Commit();
             }
@@ -168,10 +168,7 @@ namespace LetsRoshLibrary.Model
                         ItemRepository.Includes,
                         new Action<Item>((existingItem) => 
                         {
-                            new BaseObjectRepository(uow.Context).UpdateNavigations(existingItem, item);
-
-
-
+                            new BaseObjectRepository(uow.Context).UpdateOrCreateNavigations(existingItem, item);
                         }),
                         checkAllProperties,
                         modifiedProperties);

@@ -17,6 +17,20 @@ namespace LetsRoshTestApp
     {
         static void Main()
         {
+            var itemSample = Item.GetFromDb(i => i.LinkParameter == "blink", ItemRepository.Includes);
+
+            itemSample.Lore = "Lorem ımpsum : " + Guid.NewGuid();
+
+            Item.UpdateDb(itemSample, modifiedProperties: "Lore");
+
+
+            foreach (var lcl in itemSample.Localizations)
+            {
+                var bva = Localization.DeleteFromDb(l => l.Id == lcl.Id);
+            }
+            
+
+
            // var yy = Item.DeleteFromDb(i => i.LinkParameter == "blink");
 
             using (var uow = new Dota2UnitofWork())
@@ -26,7 +40,7 @@ namespace LetsRoshTestApp
                 foreach (var language in Language.LanguagesFromDota2)
                 {
                     if (!langRepo.Any(l => l.Name == language.Name))
-                        langRepo.Insert(language);
+                        langRepo.Create(language);
                 }
 
                 uow.Commit();

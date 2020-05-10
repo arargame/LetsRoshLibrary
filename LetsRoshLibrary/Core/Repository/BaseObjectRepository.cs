@@ -1,4 +1,5 @@
-﻿using LetsRoshLibrary.Model;
+﻿using LetsRoshLibrary.Core.UnitofWork;
+using LetsRoshLibrary.Model;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
@@ -35,48 +36,61 @@ namespace LetsRoshLibrary.Core.Repository
             }
         }
 
-        public override bool Insert(BaseObject entity)
+        public override bool Create(BaseObject entity)
         {
             var isInserted = false;
 
-            new ImageRepository(Context).Insert(entity.Image);
+            new ImageRepository(Context).Create(entity.Image);
 
             foreach (var localization in entity.Localizations)
             {
-                new LocalizationRepository(Context).Insert(localization);
+                new LocalizationRepository(Context).Create(localization);
             }
 
             return isInserted;
         }
 
-        public override bool UpdateNavigations(BaseObject existing, BaseObject local)
+        public override void UpdateOrCreateNavigations(BaseObject existing, BaseObject modified)
         {
-            var isUpdated = false;
-
             if (existing.Image != null)
             {
                 new ImageRepository(Context).Delete(existing.Image);
             }
 
-            existing.Image = local.Image;
+            existing.Image = modified.Image;
 
-            foreach (var existingLocalization in existing.Localizations)
+            foreach (var existingObjectLocalization in existing.Localizations)
             {
-                foreach (var localLocalization in local.Localizations)
+                foreach (var modifiedObjectLocalization in modified.Localizations)
                 {
-                    if (existingLocalization.UniqueValue == localLocalization.UniqueValue)
+                    modifiedObjectLocalization.Language = new LanguageRepository(Context).GetUnique(modifiedObjectLocalization.Language) ?? modifiedObjectLocalization.Language;
+
+                    if (existingObjectLocalization.Equals(modifiedObjectLocalization))
                     {
-                        //existingLocalization.
+                        //new LocalizationRepository(Context)
+                        //    .Update(entity:modifiedObjectLocalization,
+                        //        filter:l=>l.Id==modifiedObjectLocalization.Id,
+                        //        Locali);
                     }
                     else
                     {
-                        new LocalizationRepository(Context).Insert(localLocalization);
+                        new LocalizationRepository(Context).Create(modifiedObjectLocalization);
                     }
                 }
             }
 
+            var willBeRemovedLocalizationList = new List<string>(); 
 
-            return isUpdated;
+            foreach (var localizationObjectToRemove in existing.Localizations.Select(el => el.UniqueValue).Except(modified.Localizations.Select(ml => ml.UniqueValue)))
+            {
+                willBeRemovedLocalizationList.Add(localizationObjectToRemove);
+
+                if (existing.Localizations.Any(el => el.UniqueValue == localizationObjectToRemove))
+                    new LocalizationRepository(Context).Delete(existing.Localizations.FirstOrDefault(el => el.UniqueValue == localizationObjectToRemove));
+            }
+
+
+
         }
 
         public override void DeleteDependencies(BaseObject entity)

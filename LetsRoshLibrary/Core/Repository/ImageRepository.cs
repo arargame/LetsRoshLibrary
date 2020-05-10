@@ -20,9 +20,9 @@ namespace LetsRoshLibrary.Core.Repository
             ChangeEntityState(entity, EntityState.Added);
         }
 
-        public override bool Insert(Image entity)
+        public override bool Create(Image entity)
         {
-            return base.Insert(entity);
+            return base.Create(entity);
         }
 
         public override void DeleteDependencies(Image entity)

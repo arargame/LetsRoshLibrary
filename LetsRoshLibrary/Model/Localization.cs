@@ -1,7 +1,10 @@
-﻿using System;
+﻿using LetsRoshLibrary.Core.Repository;
+using LetsRoshLibrary.Core.UnitofWork;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -33,6 +36,18 @@ namespace LetsRoshLibrary.Model
             }
         }
 
+        public override bool Equals(object obj)
+        {
+            var localization = obj as Localization;
+
+            return ClassName == localization.ClassName && ClassName == localization.PropertyName && Language.Id == localization.Language.Id;
+        }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
+
         public Localization() { }
 
         public static Localization Create(BaseObject baseObject,Language language, string className, string propertyName, string value)
@@ -47,6 +62,36 @@ namespace LetsRoshLibrary.Model
             };
 
             return localization;
+        }
+
+        public static bool DeleteFromDb(Expression<Func<Localization, bool>> filter)
+        {
+            var isCommitted = false;
+
+            Guid? entityId = null;
+
+            try
+            {
+                using (var uow = new Dota2UnitofWork())
+                {
+                    var localizationRepository = new LocalizationRepository(uow.Context);
+
+                    var entity = localizationRepository.Get(filter, LocalizationRepository.Includes);
+
+                    entityId = entity?.Id;
+
+                    if (!localizationRepository.Delete(entity))
+                        throw new Exception("LocalizationRepository Delete Exception");
+
+                    isCommitted = uow.Commit();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Save(new Log(ex.Message, entityId: entityId?.ToString()));
+            }
+
+            return isCommitted;
         }
     }
 }

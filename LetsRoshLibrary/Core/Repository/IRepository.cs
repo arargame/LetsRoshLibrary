@@ -13,7 +13,7 @@ namespace LetsRoshLibrary.Core.Repository
         IQueryable<T> All(params string[] includes);
         bool Any(Expression<Func<T, bool>> filter = null);
         IQueryable<T> Select(Expression<Func<T, bool>> filter = null, params string[] includes);
-        bool Insert(T entity);
+        bool Create(T entity);
         bool Update(T entity);
         bool Delete(T entity);
         bool Contains(Expression<Func<T, bool>> predicate);

@@ -52,5 +52,20 @@ namespace LetsRoshLibrary.Model
         {
             return await Task.Run(() => Load(path,name));
         }
+
+        public override bool Equals(object obj)
+        {
+            var image = obj as Image;
+
+            if (image is null)
+                return false;
+
+            return Name == image.Name && Path == image.Path && Data == image.Data;
+        }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
     }
 }

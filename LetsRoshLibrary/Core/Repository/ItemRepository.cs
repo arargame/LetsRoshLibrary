@@ -25,18 +25,23 @@ namespace LetsRoshLibrary.Core.Repository
             }
         }
 
+        public override string[] GetIncludes()
+        {
+            return Includes;
+        }
+
         public override void InsertDependencies(Item entity)
         {
             new BaseObjectRepository(Context).InsertDependencies(entity);
         }
 
-        public override bool Insert(Item entity)
+        public override bool Create(Item entity)
         {
             var isInserted = false;
 
             //InsertDependencies(entity);
 
-            isInserted = base.Insert(entity);
+            isInserted = base.Create(entity);
 
             foreach (var ent in Context.ChangeTracker.Entries())
             {
