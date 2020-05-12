@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
+using System.Data.Entity.Infrastructure;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Linq.Expressions;
@@ -32,6 +33,11 @@ namespace LetsRoshLibrary.Core.Repository
 
         }
 
+        public virtual bool IsItNew(T entity)
+        {
+            return GetUnique(entity) == null;
+        }
+
         public void ShowChangeTrackerEntriesStates()
         {
             foreach (var e in Context.ChangeTracker.Entries())
@@ -43,6 +49,11 @@ namespace LetsRoshLibrary.Core.Repository
         public virtual string[] GetIncludes()
         {
             return null;
+        }
+
+        public DbEntityEntry GetAsDbEntityEntry(T entity)
+        {
+            return Context.Entry(entity);
         }
 
         public T GetEntityFromContext(T entity)
@@ -58,12 +69,12 @@ namespace LetsRoshLibrary.Core.Repository
             //if (GetEntityFromContext(entity) != null)
             //    throw new Exception(string.Format("The state of the entity with {0} type,{1} Id has already changed", entity.GetType().Name, entity.Id));
 
-            Context.Entry(entity).State = entityState;
+            GetAsDbEntityEntry(entity).State = entityState;
         }
 
         public EntityState GetEntityState(T entity)
         {
-            return Context.Entry(entity).State;
+            return GetAsDbEntityEntry(entity).State;
         }
 
         public bool Any(Expression<Func<T,bool>> filter = null)
@@ -82,9 +93,22 @@ namespace LetsRoshLibrary.Core.Repository
             return false;
         }
 
+        public virtual Expression<Func<T,bool>> UniqueFilter(T entity)
+        {
+            return o => o.Id == entity.Id;
+        }
+
+        public virtual void ConvertToPersistent(T entity)
+        {
+            var persistentObject = Get(UniqueFilter(entity));
+
+            if (persistentObject != null)
+                entity.Id = persistentObject.Id;
+        }
+
         public virtual T GetUnique(T entity,bool withIncludes = false)
         {
-            throw new Exception("");
+            return Get(UniqueFilter(entity), withIncludes ? GetIncludes() : null);
         }
 
         public T Get(Expression<Func<T, bool>> filter, params string[] includes)
@@ -93,10 +117,11 @@ namespace LetsRoshLibrary.Core.Repository
             {
                 IQueryable<T> query = DbSet;
 
-                foreach (var include in includes)
-                {
-                    query = query.Include(include);
-                }
+                if (includes != null)
+                    foreach (var include in includes)
+                    {
+                        query = query.Include(include);
+                    }
 
                 return query.SingleOrDefault(filter);
 
@@ -115,10 +140,11 @@ namespace LetsRoshLibrary.Core.Repository
             {
                 IQueryable<T> query = DbSet;
 
-                foreach (var include in includes)
-                {
-                    query = query.Include(include);
-                }
+                if (includes != null)
+                    foreach (var include in includes)
+                    {
+                        query = query.Include(include);
+                    }
 
                 return query.SingleOrDefault(t => t.Id == entityId);
             }
@@ -133,10 +159,13 @@ namespace LetsRoshLibrary.Core.Repository
         public IQueryable<T> All(params string[] includes)
         {
             IQueryable<T> query = DbSet;
-            foreach (var include in includes)
-            {
-                query = query.Include(include);
-            }
+
+            if (includes != null)
+                foreach (var include in includes)
+                {
+                    query = query.Include(include);
+                }
+
             return query;
         }
 
@@ -147,10 +176,11 @@ namespace LetsRoshLibrary.Core.Repository
             {
                 IQueryable<T> query = DbSet;
 
-                foreach (var include in includes)
-                {
-                    query = query.Include(include);
-                }
+                if (includes != null)
+                    foreach (var include in includes)
+                    {
+                        query = query.Include(include);
+                    }
 
                 return filter != null ? query.Where(filter).AsQueryable() : query.AsQueryable();
             }
@@ -180,7 +210,7 @@ namespace LetsRoshLibrary.Core.Repository
         {
             bool isInserted = false;
 
-            entity.Id = Guid.NewGuid();
+            //entity.Id = Guid.NewGuid();
 
             entity.AddedDate = DateTime.Now;
 
@@ -278,6 +308,11 @@ namespace LetsRoshLibrary.Core.Repository
             }
         }
 
+        public virtual void  InsertUpdateOrDeleteGraph(T entity)
+        {
+            
+        }
+
         public virtual bool Update(T entity)
         {
             bool isUpdated = false;
@@ -290,6 +325,8 @@ namespace LetsRoshLibrary.Core.Repository
 
                 //Context.Entry(entity).State = EntityState.Modified;
                 ChangeEntityState(entity,EntityState.Modified);
+
+                InsertUpdateOrDeleteGraph(entity);
 
                 isUpdated = true;
 

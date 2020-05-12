@@ -40,7 +40,7 @@ namespace LetsRoshLibrary.Model
         {
             var localization = obj as Localization;
 
-            return ClassName == localization.ClassName && ClassName == localization.PropertyName && Language.Id == localization.Language.Id;
+            return ClassName == localization.ClassName && PropertyName == localization.PropertyName && Language.Id == localization.Language.Id;
         }
 
         public override int GetHashCode()
@@ -93,5 +93,19 @@ namespace LetsRoshLibrary.Model
 
             return isCommitted;
         }
+
+        public static Localization GetFromDb(Expression<Func<Localization, bool>> filter, params string[] includes)
+        {
+            Localization entity = null;
+
+            using (var uow = new Dota2UnitofWork())
+            {
+                entity = uow.Load<Localization>().Get(filter, includes);
+            }
+
+            return entity;
+        }
+
+
     }
 }

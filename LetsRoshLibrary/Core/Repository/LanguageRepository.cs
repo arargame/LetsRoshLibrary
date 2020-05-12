@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -15,9 +16,14 @@ namespace LetsRoshLibrary.Core.Repository
 
         }
 
-        public override Language GetUnique(Language entity, bool withIncludes = false)
+        //public override Language GetUnique(Language entity, bool withIncludes = false)
+        //{
+        //    return Get(l => l.Name == entity.Name);
+        //}
+
+        public override Expression<Func<Language, bool>> UniqueFilter(Language entity)
         {
-            return Get(l => l.Name == entity.Name);
+            return l => l.Name == entity.Name;
         }
 
 
@@ -36,5 +42,10 @@ namespace LetsRoshLibrary.Core.Repository
 
         //    return isInserted;
         //}
+
+        public override string[] GetIncludes()
+        {
+            return null;
+        }
     }
 }

@@ -108,6 +108,17 @@ namespace LetsRoshLibrary.Model
             return DeleteFromDb(i => i.Id == item.Id);
         }
 
+        public static void ConvertToPersistent(Item item)
+        {
+            using (var uow = new Dota2UnitofWork())
+            {
+                new ItemRepository(uow.Context).ConvertToPersistent(item);
+
+                new BaseObjectRepository(uow.Context).ConvertToPersistent(item);
+            }
+        }
+
+
         //Generic yapılabilir
         public static bool DeleteFromDb(Expression<Func<Item, bool>> filter)
         {
@@ -168,7 +179,11 @@ namespace LetsRoshLibrary.Model
                         ItemRepository.Includes,
                         new Action<Item>((existingItem) => 
                         {
-                            new BaseObjectRepository(uow.Context).UpdateOrCreateNavigations(existingItem, item);
+                            //   new BaseObjectRepository(uow.Context).UpdateOrCreateNavigations(existingItem, item);
+
+                            existingItem.Image = item.Image;
+
+                            existingItem.Localizations = item.Localizations;
                         }),
                         checkAllProperties,
                         modifiedProperties);

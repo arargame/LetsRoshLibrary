@@ -67,5 +67,7 @@ namespace LetsRoshLibrary.Model
         {
             return base.GetHashCode();
         }
+
+
     }
 }

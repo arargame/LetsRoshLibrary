@@ -64,5 +64,10 @@ namespace LetsRoshLibrary.Core.Repository
 
         //    return isDeleted;
         //}
+
+        public override void InsertUpdateOrDeleteGraph(Item entity)
+        {
+            new BaseObjectRepository(Context).InsertUpdateOrDeleteGraph(entity);
+        }
     }
 }

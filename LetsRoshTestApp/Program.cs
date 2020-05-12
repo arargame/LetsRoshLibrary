@@ -17,17 +17,143 @@ namespace LetsRoshTestApp
     {
         static void Main()
         {
+            //var b12421 = Localization.DeleteFromDb(l => l.Id.ToString() == "7F882038-F993-EA11-BA8A-C8D3FF210A02");
+
             var itemSample = Item.GetFromDb(i => i.LinkParameter == "blink", ItemRepository.Includes);
+
+            var lclclc = Localization.Create(itemSample, Language.LanguagesFromDota2.FirstOrDefault(), "className", "propertyName", Guid.NewGuid().ToString());
+
+            lclclc.BaseObjectId = itemSample.Id;
+            lclclc.LanguageId = lclclc.Language.Id;
+            lclclc.Name = DateTime.Now.ToString();
+
+            itemSample.AddLocalization(lclclc);
+
+            itemSample.Image = new Image() { Id = itemSample.Image.Id ,Data = Encoding.UTF8.GetBytes(DateTime.Now.ToString()) };
+            itemSample.Image.Name = DateTime.Now.ToString();
 
             itemSample.Lore = "Lorem ımpsum : " + Guid.NewGuid();
 
+            //itemSample.Localizations.Clear();
+
+            using (var uow = new Dota2UnitofWork())
+            {
+                var itemRepository = new ItemRepository(uow.Context);
+
+                itemRepository.Update(itemSample);
+
+                var b1012010 = uow.Commit();
+            }
+
+
+            using (var uow = new Dota2UnitofWork())
+            {
+                uow.Context.Set<Item>().Attach(itemSample);
+                var itemEE = uow.Context.Entry(itemSample);
+
+                var itemRepository = new ItemRepository(uow.Context);
+
+                //var existingItem = itemRepository.Get(i => i.LinkParameter == "blink", ItemRepository.Includes);
+
+                //existingItem.Lore = itemSample.Lore;
+
+                //existingItem.Localizations = itemSample.Localizations;
+
+                itemRepository.ChangeEntityState(itemSample, EntityState.Modified);
+                //new ImageRepository(uow.Context).ChangeEntityState(itemSample.Image,EntityState.Modified);
+                //new LocalizationRepository(uow.Context).ChangeEntityState(itemSample.Localizations.FirstOrDefault(),EntityState.Modified);
+                var eeImage = uow.Context.Entry(itemSample.Image);
+                eeImage.OriginalValues.SetValues(eeImage.GetDatabaseValues());
+
+
+                var localizationRepository = new LocalizationRepository(uow.Context);
+                var existingLocalizations = localizationRepository.Select(l => l.BaseObjectId == itemSample.Id, includes: LocalizationRepository.Includes);
+
+                foreach (var itemSampleLocalization in itemSample.Localizations)
+                {
+                    if (localizationRepository.IsItNew(itemSampleLocalization))
+                    {
+                        //localizationRepository.ChangeEntityState(itemSampleLocalization, EntityState.Added);
+                        localizationRepository.Create(itemSampleLocalization);
+                    }
+                    else
+                    {
+                        var eeLocalization = localizationRepository.GetAsDbEntityEntry(itemSampleLocalization);
+
+                        eeLocalization.OriginalValues.SetValues(eeLocalization.GetDatabaseValues());
+
+
+                    }
+                }
+
+
+                //foreach (var localization in itemSample.Localizations)
+                //{
+                //    var eeLocalization = uow.Context.Entry(localization);
+
+                //    if (eeLocalization.GetDatabaseValues() != null)
+                //        eeLocalization.OriginalValues.SetValues(eeLocalization.GetDatabaseValues());
+                //    else
+                //        new LocalizationRepository(uow.Context).ChangeEntityState(localization, EntityState.Added);
+                //}
+
+                //var dbLocalizations = new LocalizationRepository(uow.Context).Select(l => l.BaseObjectId == itemSample.Id);
+
+                //foreach (var localization in dbLocalizations)
+                //{
+                //    foreach (var currentValue in itemSample.Localizations)
+                //    {
+                //        if (localization.Equals(currentValue))
+                //        {
+                //            currentValue.Id = localization.Id;
+                //        }
+                //    }
+                //}
+
+
+
+             //new LocalizationRepository(uow.Context).Select(l => l.BaseObjectId == itemSample.Id);
+                //var dbLocalizations = itemEe.
+
+
+                //foreach (var dbLocalization in dbLocalizations)
+                //{
+                //    if(dbLocalization)
+                //}
+
+
+                itemRepository.ShowChangeTrackerEntriesStates();
+
+                var baby = uow.Commit();
+            }
+
+
+
+            Item.ConvertToPersistent(itemSample);
+
             Item.UpdateDb(itemSample, modifiedProperties: "Lore");
 
+            //foreach (var localization1 in itemSample.Localizations)
+            //{
+            //    var persistentLocalization = Localization.GetFromDb(l => l.LanguageId == localization1.LanguageId && l.ClassName==localization1.ClassName && l.PropertyName==localization1.PropertyName);
 
-            foreach (var lcl in itemSample.Localizations)
-            {
-                var bva = Localization.DeleteFromDb(l => l.Id == lcl.Id);
-            }
+            //    if (persistentLocalization != null)
+            //    {
+            //        localization1.Id = persistentLocalization.Id;
+
+            //        Localization.Update();
+            //    }
+            //    else
+            //    {
+            //        Localization.Create(localization1,);
+            //    }
+            //}
+
+
+            //foreach (var lcl in itemSample.Localizations)
+            //{
+            //    var bva = Localization.DeleteFromDb(l => l.Id == lcl.Id);
+            //}
             
 
 

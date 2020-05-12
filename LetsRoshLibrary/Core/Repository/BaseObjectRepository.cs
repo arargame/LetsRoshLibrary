@@ -16,12 +16,29 @@ namespace LetsRoshLibrary.Core.Repository
 
         }
 
+        public override void ConvertToPersistent(BaseObject entity)
+        {
+            new ImageRepository(Context).ConvertToPersistent(entity.Image);
+
+            var localizationRepository = new LocalizationRepository(Context);
+
+            foreach (var localization in entity.Localizations)
+            {
+                localizationRepository.ConvertToPersistent(localization);
+            }
+        }
+
         public static string[] Includes
         {
             get
             {
                 return new string[] { "Image", "Localizations" };
             }
+        }
+
+        public override string[] GetIncludes()
+        {
+            return Includes;
         }
 
         public override void InsertDependencies(BaseObject entity)
@@ -117,5 +134,69 @@ namespace LetsRoshLibrary.Core.Repository
 
         //    return isDeleted;
         //}
+
+        public override void InsertUpdateOrDeleteGraph(BaseObject entity)
+        {
+            var baseObjectRepository = new BaseObjectRepository(Context);
+
+            var existingBaseObject = baseObjectRepository.GetUnique(entity, true);
+
+            //if (existingBaseObject == null)
+            //{
+            //    baseObjectRepository.Create(entity);
+            //}
+            //else
+            //{
+            //    baseObjectRepository.Update(entity);
+
+
+            //}
+
+            var imageRepository = new ImageRepository(Context);
+
+            if (entity.Image != null)
+            {
+                var existingImage = imageRepository.GetUnique(entity.Image);
+
+                //imageRepository.Update(entity.Image);
+
+                if (existingImage == null)
+                {
+                    imageRepository.Create(entity.Image);
+                }
+                else
+                {
+                    imageRepository.Update(entity.Image);
+                }
+            }
+            else if (existingBaseObject.Image != null)
+            {
+                imageRepository.Delete(existingBaseObject.Image);
+            }
+
+
+            var localizationRepository = new LocalizationRepository(Context);
+
+            foreach (var localization in entity.Localizations)
+            {
+                var existingLocalization = localizationRepository.GetUnique(localization);
+
+                if (existingLocalization == null)
+                {
+                    localizationRepository.Create(localization);
+                }
+                else
+                {
+                    localizationRepository.Update(localization);
+                }
+            }
+
+
+            foreach (var localization in existingBaseObject.Localizations)
+            {
+                if (!entity.Localizations.Any(l => l.Id == localization.Id))
+                    localizationRepository.Delete(localization);
+            }
+        }
     }
 }

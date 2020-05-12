@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -13,6 +14,11 @@ namespace LetsRoshLibrary.Core.Repository
         public ImageRepository(DbContext context) : base(context)
         {
 
+        }
+
+        public override Expression<Func<Image, bool>> UniqueFilter(Image entity)
+        {
+            return i => i.Name == entity.Name && i.Path == entity.Path && i.Data == entity.Data;
         }
 
         public override void InsertDependencies(Image entity)
@@ -38,5 +44,10 @@ namespace LetsRoshLibrary.Core.Repository
 
         //    return isDeleted;
         //}
+
+        public override string[] GetIncludes()
+        {
+            return BaseObjectRepository.Includes;
+        }
     }
 }

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -15,11 +16,18 @@ namespace LetsRoshLibrary.Core.Repository
 
         }
 
+        public override void ConvertToPersistent(Localization entity)
+        {
+            base.ConvertToPersistent(entity);
+
+            new LanguageRepository(Context).ConvertToPersistent(entity.Language);
+        }
+
         public static string[] Includes
         {
             get
             {
-                return BaseObjectRepository.Includes;
+                return BaseObjectRepository.Includes.Append("Language").ToArray();
             }
         }
 
@@ -32,7 +40,7 @@ namespace LetsRoshLibrary.Core.Repository
         {
             var languageRepository = new LanguageRepository(Context);
 
-            if (languageRepository.Any(l => l.Name == entity.Language.Name))
+            if (!languageRepository.IsItNew(entity.Language))
             {
                 var languageEntityFromContext = languageRepository.GetEntityFromContext(entity.Language);
 
@@ -58,6 +66,27 @@ namespace LetsRoshLibrary.Core.Repository
         public override void DeleteDependencies(Localization entity)
         {
             new LanguageRepository(Context).ChangeEntityState(entity.Language,EntityState.Unchanged);
+        }
+
+        public override Expression<Func<Localization, bool>> UniqueFilter(Localization entity)
+        {
+            return l => l.BaseObject.Id == entity.BaseObject.Id && l.Language.Id == entity.Language.Id && l.PropertyName == entity.PropertyName;
+        }
+
+        public override void InsertUpdateOrDeleteGraph(Localization entity)
+        {
+            var languageRepository = new LanguageRepository(Context);
+
+            var existingLanguage = languageRepository.GetUnique(entity.Language);
+
+            if (existingLanguage == null)
+            {
+                languageRepository.Create(entity.Language);
+            }
+            else
+            {
+                languageRepository.Update(entity.Language);
+            }
         }
 
     }
