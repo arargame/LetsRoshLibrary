@@ -64,6 +64,11 @@ namespace LetsRoshLibrary.Core.Repository
                         .FirstOrDefault(e => e.Id == entity.Id) as T;
         }
 
+        public bool IsExistsOnContext(T entity)
+        {
+            return Context.ChangeTracker.Entries().Any(e => (e.Entity as BaseObject).Id == entity.Id);
+        }
+
         public void ChangeEntityState(T entity, EntityState entityState)
         {
             //if (GetEntityFromContext(entity) != null)
@@ -110,6 +115,7 @@ namespace LetsRoshLibrary.Core.Repository
         {
             return Get(UniqueFilter(entity), withIncludes ? GetIncludes() : null);
         }
+
 
         public T Get(Expression<Func<T, bool>> filter, params string[] includes)
         {
@@ -254,6 +260,16 @@ namespace LetsRoshLibrary.Core.Repository
         }
 
 
+        public T GetExistingEntity(T entity)
+        {
+            T t = GetEntityFromContext(entity) ?? GetUnique(entity, true);
+
+            if (t == null)
+                throw new Exception("There is no such an entity in either Db or Context");
+
+            return t;
+        }
+
         public virtual void UpdateOrCreateNavigations(T existing, T local)
         {
 
@@ -308,6 +324,58 @@ namespace LetsRoshLibrary.Core.Repository
             }
         }
 
+        public IEnumerable<string> GetModifiedProperties(T entity)
+        {
+            var ee = GetAsDbEntityEntry(entity);
+
+            var ByteArrayEquality = new Func<byte[], byte[], bool>(
+                (first, second) =>
+            {
+                if (first == null || second == null)
+                    return false;
+
+                int i;
+
+                if (first.Length == second.Length)
+                {
+                    i = 0;
+
+                    while (i < first.Length && (first[i] == second[i])) 
+                    {
+                        i++;
+                    }
+
+                    if (i == first.Length)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            });
+
+            var byteArrayProperties = entity.GetType().GetProperties().Where(p => p.PropertyType.Name == "Byte[]");
+
+            foreach (var propertyName in ee.CurrentValues.PropertyNames)
+            {
+                if (byteArrayProperties.Any(p => p.Name == propertyName))
+                {
+                    if(!ByteArrayEquality((byte[])ee.GetDatabaseValues()[propertyName], (byte[])ee.CurrentValues[propertyName]))
+                        yield return propertyName;
+                }
+
+                if (ee.GetDatabaseValues()[propertyName]?.ToString() != ee.CurrentValues[propertyName]?.ToString())
+                {
+                    yield return propertyName;
+                }
+            }
+        }
+
+        public bool HasAnyModifiedProperty(T entity)
+        {
+            return GetModifiedProperties(entity).Any();
+        }
+
         public virtual void  InsertUpdateOrDeleteGraph(T entity)
         {
             
@@ -317,18 +385,43 @@ namespace LetsRoshLibrary.Core.Repository
         {
             bool isUpdated = false;
 
-            entity.ModifiedDate = DateTime.Now;
-
             try
             {
-                DbSet.Attach(entity);
-
-                //Context.Entry(entity).State = EntityState.Modified;
-                ChangeEntityState(entity,EntityState.Modified);
-
                 InsertUpdateOrDeleteGraph(entity);
 
-                isUpdated = true;
+                var existingEntity = GetExistingEntity(entity);
+
+                entity.AddedDate = existingEntity.AddedDate;
+                entity.AddedInfo = existingEntity.AddedInfo;
+
+
+                if (!IsExistsOnContext(entity))
+                    DbSet.Attach(entity);
+                else
+                {
+                    var ee = GetAsDbEntityEntry(existingEntity);
+
+                    ee.CurrentValues.SetValues(entity);
+
+                    entity = existingEntity;
+                }
+
+
+                if (HasAnyModifiedProperty(entity))
+                {
+                    entity.ModifiedDate = DateTime.Now;
+
+                    Console.Write("Modified Type : {0}" + entity.GetType().Name);
+
+                    foreach (var modifiedProperties in GetModifiedProperties(entity))
+                    {
+                        Console.WriteLine(modifiedProperties);
+                    }
+                  
+                    //ChangeEntityState(entity, EntityState.Modified);
+
+                    isUpdated = true;
+                }
 
                 ShowChangeTrackerEntriesStates();
             }
@@ -394,17 +487,28 @@ namespace LetsRoshLibrary.Core.Repository
             return predicate != null ? DbSet.Count(predicate) : DbSet.Count();
         }
 
-        public List<T> SqlQuery(string commandText, SqlParameterCollection commandParameters)
-        {
-            List<SqlParameter> parameters = new List<SqlParameter>();
 
-            for (int i = 0; i < commandParameters.Count; i++)
+        public IQueryable<T> SqlQuery(string commandText, SqlParameterCollection commandParameters)
+        {
+            IQueryable<T> result = null;
+
+            try
             {
-                parameters.Add(new SqlParameter(commandParameters[i].ParameterName, commandParameters[i].Value));
+                List<SqlParameter> parameters = new List<SqlParameter>();
+
+                for (int i = 0; i < commandParameters.Count; i++)
+                {
+                    parameters.Add(new SqlParameter(commandParameters[i].ParameterName, commandParameters[i].Value));
+                }
+
+                result = DbSet.SqlQuery(commandText, parameters.ToArray()).AsQueryable();
+            }
+            catch (Exception ex)
+            {
+                Log.Save(new Log(ex.Message));
             }
 
-            return DbSet.SqlQuery(commandText, parameters.ToArray())
-                        .ToList();
+            return result;
         }
     }
 }

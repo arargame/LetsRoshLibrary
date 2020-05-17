@@ -14,7 +14,7 @@ namespace LetsRoshLibrary.Core.UnitofWork
 {
     public class UnitOfWork : IUnitOfWork
     {
-        private bool disposed = false;
+        private bool Disposed { get; set; }
 
         public DbContext Context { get; set; }
 
@@ -124,19 +124,21 @@ namespace LetsRoshLibrary.Core.UnitofWork
 
         protected virtual void Dispose(bool disposing)
         {
-            if (!this.disposed)
+            if (!Disposed)
             {
                 if (disposing)
                 {
                     Context.Dispose();
                 }
             }
-            this.disposed = true;
+
+            Disposed = true;
         }
 
         public void Dispose()
         {
             Dispose(true);
+
             GC.SuppressFinalize(this);
         }
 

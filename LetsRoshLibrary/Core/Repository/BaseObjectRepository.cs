@@ -137,41 +137,20 @@ namespace LetsRoshLibrary.Core.Repository
 
         public override void InsertUpdateOrDeleteGraph(BaseObject entity)
         {
-            var baseObjectRepository = new BaseObjectRepository(Context);
-
-            var existingBaseObject = baseObjectRepository.GetUnique(entity, true);
-
-            //if (existingBaseObject == null)
-            //{
-            //    baseObjectRepository.Create(entity);
-            //}
-            //else
-            //{
-            //    baseObjectRepository.Update(entity);
-
-
-            //}
+            var existingEntity = GetExistingEntity(entity);
 
             var imageRepository = new ImageRepository(Context);
 
-            if (entity.Image != null)
+            if (existingEntity.Image != null)
             {
-                var existingImage = imageRepository.GetUnique(entity.Image);
-
-                //imageRepository.Update(entity.Image);
-
-                if (existingImage == null)
-                {
-                    imageRepository.Create(entity.Image);
-                }
+                if (entity.Image == null)
+                    imageRepository.Delete(existingEntity.Image);
                 else
-                {
                     imageRepository.Update(entity.Image);
-                }
             }
-            else if (existingBaseObject.Image != null)
+            else
             {
-                imageRepository.Delete(existingBaseObject.Image);
+                imageRepository.Create(entity.Image);
             }
 
 
@@ -192,7 +171,7 @@ namespace LetsRoshLibrary.Core.Repository
             }
 
 
-            foreach (var localization in existingBaseObject.Localizations)
+            foreach (var localization in existingEntity.Localizations)
             {
                 if (!entity.Localizations.Any(l => l.Id == localization.Id))
                     localizationRepository.Delete(localization);

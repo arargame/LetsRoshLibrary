@@ -34,7 +34,7 @@ namespace LetsRoshTestApp
 
             itemSample.Lore = "Lorem ımpsum : " + Guid.NewGuid();
 
-            //itemSample.Localizations.Clear();
+            itemSample.Localizations.Clear();
 
             using (var uow = new Dota2UnitofWork())
             {
