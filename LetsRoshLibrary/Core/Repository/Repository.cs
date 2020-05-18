@@ -14,6 +14,7 @@ namespace LetsRoshLibrary.Core.Repository
     public class Repository<T> : IRepository<T> where T : BaseObject
     {
         protected readonly DbContext Context;
+
         protected readonly DbSet<T> DbSet;
 
         public Repository(DbContext context)
@@ -40,16 +41,35 @@ namespace LetsRoshLibrary.Core.Repository
 
         public void ShowChangeTrackerEntriesStates()
         {
+            Console.Write("\nShowChangeTrackerEntriesStates \n");
+
             foreach (var e in Context.ChangeTracker.Entries())
             {
-                Console.WriteLine("{0}:{1}", e.Entity.GetType().Name, e.State);
+                Console.WriteLine("{0} : {1}", e.Entity.GetType().Name, e.State);
             }
         }
 
         public virtual string[] GetIncludes()
         {
-            return null;
+            return new[] { "" };
         }
+
+        public virtual string[] GetThenIncludes()
+        {
+            return new[] { "" };
+        }
+
+        public string[] GetAllIncludes()
+        {
+            var includes = GetIncludes();
+
+            var thenIncludes = GetThenIncludes();
+
+            return includes.Union(thenIncludes)
+                            .Where(i => !string.IsNullOrWhiteSpace(i))
+                            .ToArray();
+        }
+
 
         public DbEntityEntry GetAsDbEntityEntry(T entity)
         {
@@ -111,9 +131,9 @@ namespace LetsRoshLibrary.Core.Repository
                 entity.Id = persistentObject.Id;
         }
 
-        public virtual T GetUnique(T entity,bool withIncludes = false)
+        public virtual T GetUnique(T entity,bool withAllIncludes = false)
         {
-            return Get(UniqueFilter(entity), withIncludes ? GetIncludes() : null);
+            return Get(UniqueFilter(entity), withAllIncludes ? GetAllIncludes() : null);
         }
 
 
@@ -123,7 +143,7 @@ namespace LetsRoshLibrary.Core.Repository
             {
                 IQueryable<T> query = DbSet;
 
-                if (includes != null)
+                if (includes != null && includes.Any())
                     foreach (var include in includes)
                     {
                         query = query.Include(include);
@@ -146,7 +166,7 @@ namespace LetsRoshLibrary.Core.Repository
             {
                 IQueryable<T> query = DbSet;
 
-                if (includes != null)
+                if (includes != null && includes.Any())
                     foreach (var include in includes)
                     {
                         query = query.Include(include);
@@ -166,7 +186,7 @@ namespace LetsRoshLibrary.Core.Repository
         {
             IQueryable<T> query = DbSet;
 
-            if (includes != null)
+            if (includes != null && includes.Any())
                 foreach (var include in includes)
                 {
                     query = query.Include(include);
@@ -182,7 +202,7 @@ namespace LetsRoshLibrary.Core.Repository
             {
                 IQueryable<T> query = DbSet;
 
-                if (includes != null)
+                if (includes != null && includes.Any())
                     foreach (var include in includes)
                     {
                         query = query.Include(include);
@@ -209,8 +229,6 @@ namespace LetsRoshLibrary.Core.Repository
         public virtual void DeleteDependencies(T entity) { }
 
         public virtual void InsertDependencies(T entity) { }
-
-        public virtual void UpdateDependencies(T entity) { }
 
         public virtual bool Create(T entity)
         {
@@ -270,59 +288,51 @@ namespace LetsRoshLibrary.Core.Repository
             return t;
         }
 
-        public virtual void UpdateOrCreateNavigations(T existing, T local)
-        {
 
-        }
+        //public virtual bool Update(T entity,
+        //    Expression<Func<T,bool>> filter,
+        //    string[] includes,
+        //    bool checkAllProperties = false,
+        //    params string[] modifiedProperties)
+        //{
+        //    try
+        //    {
+        //        var existingEntity = Get(filter, includes.ToArray());
 
-        public virtual bool Update(T entity,
-            Expression<Func<T,bool>> filter,
-            string[] includes,
-            Action<T> actionToUpdateNavigations = null,
-            bool checkAllProperties = false,
-            params string[] modifiedProperties)
-        {
-            try
-            {
-                var existingEntity = Get(filter, includes.ToArray());
+        //        if (existingEntity == null)
+        //            throw new Exception(string.Format("There is no such an entity with following informations ({0},{1})", existingEntity.GetType().Name, existingEntity.Id));
 
-                if (existingEntity == null)
-                    throw new Exception(string.Format("There is no such an entity with following informations ({0},{1})", existingEntity.GetType().Name, existingEntity.Id));
+        //        var ee = Context.Entry(existingEntity);
 
-                var ee = Context.Entry(existingEntity);
+        //        modifiedProperties = checkAllProperties ? modifiedProperties.Union(ee.OriginalValues.PropertyNames)
+        //                                                .Distinct()
+        //                                                .ToArray() : modifiedProperties;
 
-                modifiedProperties = checkAllProperties ? modifiedProperties.Union(ee.OriginalValues.PropertyNames)
-                                                        .Distinct()
-                                                        .ToArray() : modifiedProperties;
+        //        foreach (var property in modifiedProperties)
+        //        {
+        //            if (new[] { "Id" }.Union(includes).Any(p => p == property))
+        //                continue;
 
-                foreach (var property in modifiedProperties)
-                {
-                    if (new[] { "Id" }.Union(includes).Any(p => p == property))
-                        continue;
+        //            typeof(T).GetProperty(property)
+        //                .SetValue(existingEntity, typeof(T).GetProperty(property).GetValue(entity, null));
+        //        }
 
-                    typeof(T).GetProperty(property)
-                        .SetValue(existingEntity, typeof(T).GetProperty(property).GetValue(entity, null));
-                }
+        //        if (modifiedProperties.Any())
+        //        {
+        //            return Update(existingEntity);
+        //        }
+        //        else
+        //        {
+        //            return false;
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Log.Save(new Log(ex.Message));
 
-                if (actionToUpdateNavigations != null)
-                    actionToUpdateNavigations.Invoke(existingEntity);
-
-                if (modifiedProperties.Any() || actionToUpdateNavigations!=null)
-                {
-                    return Update(existingEntity);
-                }
-                else
-                {
-                    return false;
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Save(new Log(ex.Message));
-
-                return false;
-            }
-        }
+        //        return false;
+        //    }
+        //}
 
         public IEnumerable<string> GetModifiedProperties(T entity)
         {
@@ -363,8 +373,7 @@ namespace LetsRoshLibrary.Core.Repository
                     if(!ByteArrayEquality((byte[])ee.GetDatabaseValues()[propertyName], (byte[])ee.CurrentValues[propertyName]))
                         yield return propertyName;
                 }
-
-                if (ee.GetDatabaseValues()[propertyName]?.ToString() != ee.CurrentValues[propertyName]?.ToString())
+                else if (ee.GetDatabaseValues()[propertyName]?.ToString() != ee.CurrentValues[propertyName]?.ToString())
                 {
                     yield return propertyName;
                 }
@@ -376,10 +385,7 @@ namespace LetsRoshLibrary.Core.Repository
             return GetModifiedProperties(entity).Any();
         }
 
-        public virtual void  InsertUpdateOrDeleteGraph(T entity)
-        {
-            
-        }
+        public virtual void  InsertUpdateOrDeleteGraph(T entity) { }
 
         public virtual bool Update(T entity)
         {
@@ -391,14 +397,12 @@ namespace LetsRoshLibrary.Core.Repository
 
                 var existingEntity = GetExistingEntity(entity);
 
-                entity.AddedDate = existingEntity.AddedDate;
-                entity.AddedInfo = existingEntity.AddedInfo;
-
-
-                if (!IsExistsOnContext(entity))
-                    DbSet.Attach(entity);
-                else
+                if (existingEntity != null)
                 {
+                    entity.Id = existingEntity.Id;
+                    entity.AddedDate = existingEntity.AddedDate;
+                    entity.AddedInfo = existingEntity.AddedInfo;
+
                     var ee = GetAsDbEntityEntry(existingEntity);
 
                     ee.CurrentValues.SetValues(entity);
@@ -406,19 +410,18 @@ namespace LetsRoshLibrary.Core.Repository
                     entity = existingEntity;
                 }
 
-
                 if (HasAnyModifiedProperty(entity))
                 {
                     entity.ModifiedDate = DateTime.Now;
 
-                    Console.Write("Modified Type : {0}" + entity.GetType().Name);
+                    Console.Write("\nModified Type : {0} \n", entity.GetType().Name);
 
                     foreach (var modifiedProperties in GetModifiedProperties(entity))
                     {
                         Console.WriteLine(modifiedProperties);
                     }
-                  
-                    //ChangeEntityState(entity, EntityState.Modified);
+
+                    ChangeEntityState(entity, EntityState.Modified);
 
                     isUpdated = true;
                 }
@@ -458,13 +461,13 @@ namespace LetsRoshLibrary.Core.Repository
                     var message = new
                     {
                         Count = Context.ChangeTracker.Entries().Count(),
-                        Description = string.Join(",", Context.ChangeTracker.Entries().Select(e => string.Format("{0}:{1}", e.Entity.GetType().Name, e.State)))
+                        Description = string.Join(",\n", Context.ChangeTracker.Entries().Select(e => string.Format("{0} : {1}", e.Entity.GetType().Name, e.State)))
                     };
 
                     if (entity.GetType().Name != "Log")
-                        Log.Save(new Log(string.Format("In deleting process {0} entities was affected.Message : {1}", message.Count, message.Description), LogType.Info, entity.Id.ToString()));
+                        Log.Save(new Log(string.Format("\nIn deleting process {0} entities was affected.Message : {1} \n", message.Count, message.Description), LogType.Info, entity.Id.ToString()));
 
-                    Console.WriteLine(string.Format("In deleting process {0} entities was affected.Message : {1}", message.Count, message.Description));
+                    Console.WriteLine(string.Format("\nIn deleting process {0} entities was affected.Message : {1} \n", message.Count, message.Description));
 
                     ShowChangeTrackerEntriesStates();
                 }

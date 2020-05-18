@@ -27,9 +27,10 @@ namespace LetsRoshLibrary.Core.Repository
         {
             get
             {
-                return BaseObjectRepository.Includes.Append("Language").ToArray();
+                return new[] { "BaseObject", "Language" };
             }
         }
+
 
         public override string[] GetIncludes()
         {
@@ -38,16 +39,27 @@ namespace LetsRoshLibrary.Core.Repository
 
         public override void InsertDependencies(Localization entity)
         {
+            var baseObjectRepository = new BaseObjectRepository(Context);
+
+            if (!baseObjectRepository.IsItNew(entity.BaseObject))
+            {
+                var existingBaseObject = baseObjectRepository.GetExistingEntity(entity.BaseObject);
+
+                if (existingBaseObject != null)
+                    entity.BaseObject = existingBaseObject;
+            }
+
+
             var languageRepository = new LanguageRepository(Context);
 
             if (!languageRepository.IsItNew(entity.Language))
             {
-                var languageEntityFromContext = languageRepository.GetEntityFromContext(entity.Language);
+                var existingLanguage = languageRepository.GetExistingEntity(entity.Language);
 
-                if (languageEntityFromContext == null)
+                if (existingLanguage == null)
                     languageRepository.ChangeEntityState(entity.Language, EntityState.Unchanged);
                 else
-                    entity.Language = languageEntityFromContext;
+                    entity.Language = existingLanguage;
             }
             else
                 languageRepository.Create(entity.Language);
@@ -70,16 +82,14 @@ namespace LetsRoshLibrary.Core.Repository
 
         public override Expression<Func<Localization, bool>> UniqueFilter(Localization entity)
         {
-            return l => l.BaseObject.Id == entity.BaseObject.Id && l.Language.Id == entity.Language.Id && l.PropertyName == entity.PropertyName;
+            return l => l.BaseObjectId == entity.BaseObjectId && l.LanguageId == entity.LanguageId && l.PropertyName == entity.PropertyName;
         }
 
         public override void InsertUpdateOrDeleteGraph(Localization entity)
         {
             var languageRepository = new LanguageRepository(Context);
 
-            var existingLanguage = languageRepository.GetUnique(entity.Language);
-
-            if (existingLanguage == null)
+            if (languageRepository.IsItNew(entity.Language))
             {
                 languageRepository.Create(entity.Language);
             }

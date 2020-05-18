@@ -79,34 +79,9 @@ namespace LetsRoshLibrary.Model
 
         public Item() { }
 
-        public static List<Item> SelectFromDb(Expression<Func<Item, bool>> filter = null, params string[] includes)
-        {
-            List<Item> items = new List<Item>();
 
-            using (var uow = new Dota2UnitofWork())
-            {
-                items = new ItemRepository(uow.Context).Select(filter, includes).ToList();
-            }
 
-            return items;
-        }
 
-        public static Item GetFromDb(Expression<Func<Item, bool>> filter, params string[] includes)
-        {
-            Item entity = null;
-
-            using (var uow = new Dota2UnitofWork())
-            {
-                entity = uow.Load<Item>().Get(filter, includes);
-            }
-
-            return entity;
-        }
-
-        public static bool DeleteFromDb(Item item)
-        {
-            return DeleteFromDb(i => i.Id == item.Id);
-        }
 
         public static void ConvertToPersistent(Item item)
         {
@@ -119,80 +94,6 @@ namespace LetsRoshLibrary.Model
         }
 
 
-        //Generic yapılabilir
-        public static bool DeleteFromDb(Expression<Func<Item, bool>> filter)
-        {
-            var isCommitted = false;
-
-            Guid? entityId = null;
-
-            try
-            {
-                using (var uow = new Dota2UnitofWork())
-                {
-                    var itemRepository = new ItemRepository(uow.Context);
-
-                    var entity = itemRepository.Get(filter, ItemRepository.Includes);
-
-                    entityId = entity?.Id;
-
-                    if (!itemRepository.Delete(entity))
-                        throw new Exception("ItemRepository Delete Exception");
-
-                    isCommitted = uow.Commit();
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Save(new Log(ex.Message, entityId: entityId?.ToString()));
-            }
-
-            return isCommitted;
-        }
-
-
-        public static bool SaveToDb(Item item)
-        {
-            var isCommitted = false;
-
-            using (var uow = new Dota2UnitofWork())
-            {
-                new ItemRepository(uow.Context).Create(item);
-
-                isCommitted = uow.Commit();
-            }
-
-            return isCommitted;
-        }
-
-        public static bool UpdateDb(Item item,
-            bool checkAllProperties = false,
-            params string[] modifiedProperties)
-        {
-            var isCommitted = false;
-
-            using (var uow = new Dota2UnitofWork())
-            {
-                new ItemRepository(uow.Context)
-                    .Update(item,
-                        i => i.LinkParameter == item.LinkParameter,
-                        ItemRepository.Includes,
-                        new Action<Item>((existingItem) => 
-                        {
-                            //   new BaseObjectRepository(uow.Context).UpdateOrCreateNavigations(existingItem, item);
-
-                            existingItem.Image = item.Image;
-
-                            existingItem.Localizations = item.Localizations;
-                        }),
-                        checkAllProperties,
-                        modifiedProperties);
-
-                isCommitted = uow.Commit();
-            }
-
-            return isCommitted;
-        }
 
         public static async Task<List<Item>> Load(string linkParameter = null,Language language = null)
         {

@@ -36,17 +36,17 @@ namespace LetsRoshLibrary.Model
             }
         }
 
-        public override bool Equals(object obj)
-        {
-            var localization = obj as Localization;
+        //public override bool Equals(object obj)
+        //{
+        //    var localization = obj as Localization;
 
-            return ClassName == localization.ClassName && PropertyName == localization.PropertyName && Language.Id == localization.Language.Id;
-        }
+        //    return ClassName == localization.ClassName && PropertyName == localization.PropertyName && Language.Id == localization.Language.Id;
+        //}
 
-        public override int GetHashCode()
-        {
-            return base.GetHashCode();
-        }
+        //public override int GetHashCode()
+        //{
+        //    return base.GetHashCode();
+        //}
 
         public Localization() { }
 

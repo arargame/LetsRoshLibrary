@@ -14,7 +14,7 @@ namespace LetsRoshLibrary.Model
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        [Index(IsClustered = false)]
+        [Index(IsClustered = false, IsUnique = true)]
         public Guid Id { get; set; }
 
         [StringLength(50)]

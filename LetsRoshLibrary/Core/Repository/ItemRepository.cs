@@ -25,9 +25,30 @@ namespace LetsRoshLibrary.Core.Repository
             }
         }
 
+        public static string[] ThenIncludes
+        {
+            get
+            {
+                return BaseObjectRepository.ThenIncludes;
+            }
+        }
+
+        public static string[] AllIncludes
+        {
+            get
+            {
+                return Includes.Union(ThenIncludes).ToArray();
+            }
+        }
+
         public override string[] GetIncludes()
         {
             return Includes;
+        }
+
+        public override string[] GetThenIncludes()
+        {
+            return ThenIncludes;
         }
 
         public override void InsertDependencies(Item entity)

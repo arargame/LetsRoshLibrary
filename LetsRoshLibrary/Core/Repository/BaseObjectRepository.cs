@@ -36,10 +36,32 @@ namespace LetsRoshLibrary.Core.Repository
             }
         }
 
+        public static string[] ThenIncludes
+        {
+            get
+            {
+                return new string[] { "Localizations.Language" };
+            }
+        }
+
+        public static string[] AllIncludes
+        {
+            get
+            {
+                return Includes.Union(ThenIncludes).ToArray();
+            }
+        }
+
         public override string[] GetIncludes()
         {
             return Includes;
         }
+
+        public override string[] GetThenIncludes()
+        {
+            return ThenIncludes;
+        }
+
 
         public override void InsertDependencies(BaseObject entity)
         {
@@ -67,48 +89,6 @@ namespace LetsRoshLibrary.Core.Repository
             return isInserted;
         }
 
-        public override void UpdateOrCreateNavigations(BaseObject existing, BaseObject modified)
-        {
-            if (existing.Image != null)
-            {
-                new ImageRepository(Context).Delete(existing.Image);
-            }
-
-            existing.Image = modified.Image;
-
-            foreach (var existingObjectLocalization in existing.Localizations)
-            {
-                foreach (var modifiedObjectLocalization in modified.Localizations)
-                {
-                    modifiedObjectLocalization.Language = new LanguageRepository(Context).GetUnique(modifiedObjectLocalization.Language) ?? modifiedObjectLocalization.Language;
-
-                    if (existingObjectLocalization.Equals(modifiedObjectLocalization))
-                    {
-                        //new LocalizationRepository(Context)
-                        //    .Update(entity:modifiedObjectLocalization,
-                        //        filter:l=>l.Id==modifiedObjectLocalization.Id,
-                        //        Locali);
-                    }
-                    else
-                    {
-                        new LocalizationRepository(Context).Create(modifiedObjectLocalization);
-                    }
-                }
-            }
-
-            var willBeRemovedLocalizationList = new List<string>(); 
-
-            foreach (var localizationObjectToRemove in existing.Localizations.Select(el => el.UniqueValue).Except(modified.Localizations.Select(ml => ml.UniqueValue)))
-            {
-                willBeRemovedLocalizationList.Add(localizationObjectToRemove);
-
-                if (existing.Localizations.Any(el => el.UniqueValue == localizationObjectToRemove))
-                    new LocalizationRepository(Context).Delete(existing.Localizations.FirstOrDefault(el => el.UniqueValue == localizationObjectToRemove));
-            }
-
-
-
-        }
 
         public override void DeleteDependencies(BaseObject entity)
         {
@@ -158,9 +138,7 @@ namespace LetsRoshLibrary.Core.Repository
 
             foreach (var localization in entity.Localizations)
             {
-                var existingLocalization = localizationRepository.GetUnique(localization);
-
-                if (existingLocalization == null)
+                if (localizationRepository.IsItNew(localization))
                 {
                     localizationRepository.Create(localization);
                 }
@@ -170,9 +148,12 @@ namespace LetsRoshLibrary.Core.Repository
                 }
             }
 
+            var existingEntityLocalizations = existingEntity.Localizations.ToList();
 
-            foreach (var localization in existingEntity.Localizations)
+            for (int i = 0; i < existingEntityLocalizations.Count; i++)
             {
+                var localization = existingEntityLocalizations.ToList()[i];
+
                 if (!entity.Localizations.Any(l => l.Id == localization.Id))
                     localizationRepository.Delete(localization);
             }
