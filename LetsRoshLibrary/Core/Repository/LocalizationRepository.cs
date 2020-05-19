@@ -16,6 +16,10 @@ namespace LetsRoshLibrary.Core.Repository
 
         }
 
+        public LocalizationRepository()
+        {
+        }
+
         public override void ConvertToPersistent(Localization entity)
         {
             base.ConvertToPersistent(entity);
@@ -80,7 +84,7 @@ namespace LetsRoshLibrary.Core.Repository
             new LanguageRepository(Context).ChangeEntityState(entity.Language,EntityState.Unchanged);
         }
 
-        public override Expression<Func<Localization, bool>> UniqueFilter(Localization entity)
+        public override Expression<Func<Localization, bool>> UniqueFilter(Localization entity,bool forEntityFramework = true)
         {
             return l => l.BaseObjectId == entity.BaseObjectId && l.LanguageId == entity.LanguageId && l.PropertyName == entity.PropertyName;
         }

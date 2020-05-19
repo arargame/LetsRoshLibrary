@@ -6,7 +6,6 @@ using System.Data.Entity.Infrastructure;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace LetsRoshLibrary.Core.Repository
@@ -31,8 +30,9 @@ namespace LetsRoshLibrary.Core.Repository
             {
                 Log.Save(new Log(string.Format("Class : {0}, Error : {1}", typeof(T).FullName, ex.ToString())));
             }
-
         }
+
+        public Repository() { }
 
         public virtual bool IsItNew(T entity)
         {
@@ -102,7 +102,7 @@ namespace LetsRoshLibrary.Core.Repository
             return GetAsDbEntityEntry(entity).State;
         }
 
-        public bool Any(Expression<Func<T,bool>> filter = null)
+        public virtual bool Any(Expression<Func<T,bool>> filter = null)
         {
             try
             {
@@ -118,7 +118,7 @@ namespace LetsRoshLibrary.Core.Repository
             return false;
         }
 
-        public virtual Expression<Func<T,bool>> UniqueFilter(T entity)
+        public virtual Expression<Func<T, bool>> UniqueFilter(T entity, bool forEntityFramework = true)
         {
             return o => o.Id == entity.Id;
         }
@@ -129,6 +129,11 @@ namespace LetsRoshLibrary.Core.Repository
 
             if (persistentObject != null)
                 entity.Id = persistentObject.Id;
+        }
+
+        public virtual T GetUniqueLight(T entity)
+        {
+            throw new Exception("Declare this method");
         }
 
         public virtual T GetUnique(T entity,bool withAllIncludes = false)
@@ -208,7 +213,8 @@ namespace LetsRoshLibrary.Core.Repository
                         query = query.Include(include);
                     }
 
-                return filter != null ? query.Where(filter).AsQueryable() : query.AsQueryable();
+                return filter != null ? query.Where(filter) : query;
+
             }
             catch (Exception ex)
             {
@@ -217,6 +223,7 @@ namespace LetsRoshLibrary.Core.Repository
 
             return DbSet;
         }
+
 
         public async Task<List<T>> SelectAsync(Expression<Func<T, bool>> filter = null, params string[] includes)
         {

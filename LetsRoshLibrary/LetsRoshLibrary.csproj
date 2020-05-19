@@ -87,7 +87,10 @@
     <Compile Include="Model\Log.cs" />
     <Compile Include="Model\Skill.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Services\BaseObjectService.cs" />
+    <Compile Include="Services\ImageService.cs" />
     <Compile Include="Services\ItemService.cs" />
+    <Compile Include="Services\LocalizationService.cs" />
     <Compile Include="Services\Service.cs" />
   </ItemGroup>
   <ItemGroup />

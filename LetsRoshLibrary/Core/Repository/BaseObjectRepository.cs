@@ -62,6 +62,10 @@ namespace LetsRoshLibrary.Core.Repository
             return ThenIncludes;
         }
 
+        public override BaseObject GetUniqueLight(BaseObject entity)
+        {
+            return base.GetUniqueLight(entity);
+        }
 
         public override void InsertDependencies(BaseObject entity)
         {

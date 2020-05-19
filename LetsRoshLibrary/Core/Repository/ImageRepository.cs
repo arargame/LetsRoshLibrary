@@ -16,9 +16,34 @@ namespace LetsRoshLibrary.Core.Repository
 
         }
 
-        public override Expression<Func<Image, bool>> UniqueFilter(Image entity)
+        public ImageRepository() { }
+
+        //LINQ to Entities does not recognize the method 'Boolean SequenceEqual[Byte](System.Collections.Generic.IEnumerable`1[System.Byte], System.Collections.Generic.IEnumerable`1[System.Byte])' method, and this method cannot be translated into a store expression.
+        //public override bool Any(Expression<Func<Image, bool>> filter = null,Image image = null)
+        //{
+        //    try
+        //    {
+        //        IQueryable<Image> query = DbSet;
+
+        //        return query.Where(filter)
+        //                    .ToList()
+        //                    .Any(i => i.Data.SequenceEqual(image.Data));
+
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Log.Save(new Log(string.Format("Class : {0}, Error : {1}", typeof(Image).FullName, ex.ToString())));
+        //    }
+
+        //    return false;
+        //}
+
+        public override Expression<Func<Image, bool>> UniqueFilter(Image entity,bool forEntityFramework = true)
         {
-            return i => i.Name == entity.Name && i.Path == entity.Path && i.Data == entity.Data;
+            if(forEntityFramework)
+                return i => i.Name == entity.Name && i.Path == entity.Path && i.Data == entity.Data;
+            else
+                return i => i.Name == entity.Name && i.Path == entity.Path && i.Data.SequenceEqual(entity.Data);
         }
 
         public override void InsertDependencies(Image entity)

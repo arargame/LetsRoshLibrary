@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Data.Entity;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,6 +13,9 @@ namespace LetsRoshLibrary.Model
 
     public abstract class BaseObject
     {
+        [NotMapped]
+        public EntityState EntityState { get; private set; }
+
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         [Index(IsClustered = false, IsUnique = true)]
@@ -59,6 +63,8 @@ namespace LetsRoshLibrary.Model
 
         public BaseObject()
         {
+            ChangeEntityState(EntityState.Unchanged);
+
             Id = Guid.NewGuid();
 
             AddedDate = DateTime.Now;
@@ -91,6 +97,11 @@ namespace LetsRoshLibrary.Model
                 throw new Exception("localization parameter is null");
 
             Localizations.Add(localization);
+        }
+
+        public void ChangeEntityState(EntityState entityState)
+        {
+            EntityState = entityState;
         }
     }
 }

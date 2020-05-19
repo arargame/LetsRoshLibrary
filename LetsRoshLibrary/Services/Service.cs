@@ -4,6 +4,7 @@ using LetsRoshLibrary.Core.UnitofWork;
 using LetsRoshLibrary.Model;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Data.Entity;
 using System.Linq;
 using System.Linq.Expressions;
@@ -17,6 +18,62 @@ namespace LetsRoshLibrary.Services
         public Service()
         {
             
+        }
+
+        public bool Any(Expression<Func<T, bool>> filter = null)
+        {
+            using (var uow = new Dota2UnitofWork())
+            {
+                return GetRepository(uow.Context).Any(filter);
+            }
+        }
+
+        public T AnonymousTypeToT(object anonymous)
+        {
+            try
+            {
+                T t = (T)Activator.CreateInstance(typeof(T));
+
+                var anonymousObjectsProperties = anonymous.GetType().GetProperties();
+                var tsProperties = typeof(T).GetProperties();
+
+                foreach (var property in anonymousObjectsProperties)
+                {
+                    if (tsProperties.Any(tp=>tp.Name == property.Name))
+                    {
+                        var tProperty = tsProperties.FirstOrDefault(tp => tp.Name == property.Name);
+
+                        if (tProperty.Name == property.Name && tProperty.PropertyType.Name == property.PropertyType.Name)
+                            t.GetType().GetProperty(property.Name).SetValue(t, property.GetValue(anonymous, null));
+
+                    }
+                }
+
+                return t;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        public virtual void ConvertToPersistent(T disconnectedEntity,object persistent = null,Func<object> populatePersistent=null) 
+        {
+            persistent = persistent ?? populatePersistent();
+
+            if (persistent == null)
+            {
+                return;
+            }
+
+            var connectedEntity = AnonymousTypeToT(persistent);
+
+            var isExist = new[] { disconnectedEntity }.Any(new Repository<T>().UniqueFilter(connectedEntity, false).Compile());
+
+            if (isExist)
+                ReplaceIds(disconnectedEntity, connectedEntity);
+            else
+                disconnectedEntity.ChangeEntityState(System.Data.Entity.EntityState.Added);
         }
 
         public bool Create(T entity)
@@ -85,6 +142,13 @@ namespace LetsRoshLibrary.Services
         public virtual Repository<T> GetRepository(DbContext context)
         {
             return new Repository<T>(context);
+        }
+
+        public void ReplaceIds(T localEntity,T existingEntity)
+        {
+            localEntity.Id = existingEntity.Id;
+
+            localEntity.ChangeEntityState(EntityState.Unchanged);
         }
 
         public List<T> Select(Expression<Func<T, bool>> filter = null, params string[] includes)

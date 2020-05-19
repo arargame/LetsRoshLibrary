@@ -22,7 +22,20 @@ namespace LetsRoshTestApp
 
             var list = itemService.Select(includes: ItemRepository.AllIncludes);
 
-            itemService.Update(list.FirstOrDefault());
+            var persistentItem = itemService.Select(includes:ItemRepository.AllIncludes).FirstOrDefault();
+
+            //using (var uow =new Dota2UnitofWork())
+            //{
+            //    var imageRepository = new ImageRepository(uow.Context);
+
+            //    var xcc = imageRepository.Get(persistentItem.ImageId.Value, imageRepository.GetAllIncludes());
+
+            //    var b = imageRepository.Any(imageRepository.UniqueFilter(persistentItem.Image));
+            //}
+
+            itemService.ConvertToPersistent(persistentItem);
+
+            //itemService.Update(list.FirstOrDefault());
 
 
             var itemSample = new ItemService().Get(i => i.LinkParameter == "blink", ItemRepository.AllIncludes);
@@ -41,6 +54,8 @@ namespace LetsRoshTestApp
             itemSample.Lore = "Lorem ımpsum : " + Guid.NewGuid();
 
             //itemSample.Localizations.Clear();
+
+
 
             using (var uow = new Dota2UnitofWork())
             {

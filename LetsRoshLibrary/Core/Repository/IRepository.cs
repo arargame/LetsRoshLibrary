@@ -11,8 +11,8 @@ namespace LetsRoshLibrary.Core.Repository
     {
         T Get(Guid entityId, params string[] includes);
         IQueryable<T> All(params string[] includes);
-        bool Any(Expression<Func<T, bool>> filter = null);
-        IQueryable<T> Select(Expression<Func<T, bool>> filter = null, params string[] includes);
+        //bool Any(Expression<Func<T, bool>> filter = null);
+        //IQueryable<T> Select(Expression<Func<T, bool>> filter = null, params string[] includes);
         bool Create(T entity);
         bool Update(T entity);
         bool Delete(T entity);

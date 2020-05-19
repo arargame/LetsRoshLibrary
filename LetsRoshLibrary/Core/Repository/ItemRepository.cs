@@ -90,5 +90,10 @@ namespace LetsRoshLibrary.Core.Repository
         {
             new BaseObjectRepository(Context).InsertUpdateOrDeleteGraph(entity);
         }
+
+        public override Expression<Func<Item, bool>> UniqueFilter(Item entity, bool forEntityFramework = true)
+        {
+            return i => i.LinkParameter == entity.LinkParameter;
+        }
     }
 }

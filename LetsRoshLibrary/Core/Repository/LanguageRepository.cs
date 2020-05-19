@@ -21,7 +21,7 @@ namespace LetsRoshLibrary.Core.Repository
         //    return Get(l => l.Name == entity.Name);
         //}
 
-        public override Expression<Func<Language, bool>> UniqueFilter(Language entity)
+        public override Expression<Func<Language, bool>> UniqueFilter(Language entity,bool forEntityFramework = true)
         {
             return l => l.Name == entity.Name;
         }

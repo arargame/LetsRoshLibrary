@@ -18,7 +18,7 @@ namespace LetsRoshLibrary.Core.UnitofWork
 
         public DbContext Context { get; set; }
 
-        public UnitOfWork(DbContext context)
+        public UnitOfWork(DbContext context) : this()
         {
             Context = context;
         }
