@@ -11,6 +11,40 @@ namespace LetsRoshLibrary.Core.Repository
 {
     public class BaseObjectRepository : Repository<BaseObject>
     {
+        public static string[] AllIncludes
+        {
+            get
+            {
+                return Includes.Union(ThenIncludes).ToArray();
+            }
+        }
+        public static string[] Includes
+        {
+            get
+            {
+                return new string[] { "Image", "Localizations" };
+            }
+        }
+
+        public override string[] GetIncludes()
+        {
+            return Includes;
+        }
+
+        public override string[] GetThenIncludes()
+        {
+            return ThenIncludes;
+        }
+
+        public static string[] ThenIncludes
+        {
+            get
+            {
+                return new string[] { "Localizations.Language" };
+            }
+        }
+
+
         public BaseObjectRepository(DbContext context) : base(context)
         {
 
@@ -28,57 +62,6 @@ namespace LetsRoshLibrary.Core.Repository
             }
         }
 
-        public static string[] Includes
-        {
-            get
-            {
-                return new string[] { "Image", "Localizations" };
-            }
-        }
-
-        public static string[] ThenIncludes
-        {
-            get
-            {
-                return new string[] { "Localizations.Language" };
-            }
-        }
-
-        public static string[] AllIncludes
-        {
-            get
-            {
-                return Includes.Union(ThenIncludes).ToArray();
-            }
-        }
-
-        public override string[] GetIncludes()
-        {
-            return Includes;
-        }
-
-        public override string[] GetThenIncludes()
-        {
-            return ThenIncludes;
-        }
-
-        public override BaseObject GetUniqueLight(BaseObject entity)
-        {
-            return base.GetUniqueLight(entity);
-        }
-
-        public override void InsertDependencies(BaseObject entity)
-        {
-            new ImageRepository(Context).InsertDependencies(entity.Image);
-
-            var localizationRepository = new LocalizationRepository(Context);
-
-            foreach (var localization in entity.Localizations)
-            {
-                localizationRepository.InsertDependencies(localization);
-            }
-        }
-
         public override bool Create(BaseObject entity)
         {
             var isInserted = false;
@@ -93,33 +76,7 @@ namespace LetsRoshLibrary.Core.Repository
             return isInserted;
         }
 
-
-        public override void DeleteDependencies(BaseObject entity)
-        {
-            if (entity.Image != null)
-                ChangeEntityState(entity.Image, EntityState.Deleted);
-
-            var localizationRepository = new LocalizationRepository(Context);
-
-            foreach (var localization in entity.Localizations.ToList())
-            {
-                localizationRepository.DeleteDependencies(localization);
-
-                ChangeEntityState(localization,EntityState.Deleted);
-            }
-        }
-
-        //public override bool Delete(BaseObject entity)
-        //{
-        //    var isDeleted = false;
-
-        //    if (entity.Image != null)
-        //        isDeleted = new ImageRepository(Context).Delete(entity.Image);
-
-        //    return isDeleted;
-        //}
-
-        public override void InsertUpdateOrDeleteGraph(BaseObject entity)
+        public override void CreateUpdateOrDeleteGraph(BaseObject entity)
         {
             var existingEntity = GetExistingEntity(entity);
 
@@ -160,6 +117,34 @@ namespace LetsRoshLibrary.Core.Repository
 
                 if (!entity.Localizations.Any(l => l.Id == localization.Id))
                     localizationRepository.Delete(localization);
+            }
+        }
+
+        public override void DeleteDependencies(BaseObject entity)
+        {
+            if (entity.Image != null)
+                ChangeEntityState(entity.Image, EntityState.Deleted);
+
+            var localizationRepository = new LocalizationRepository(Context);
+
+            foreach (var localization in entity.Localizations.ToList())
+            {
+                localizationRepository.DeleteDependencies(localization);
+
+                ChangeEntityState(localization, EntityState.Deleted);
+            }
+        }
+
+
+        public override void CreateDependencies(BaseObject entity)
+        {
+            new ImageRepository(Context).CreateDependencies(entity.Image);
+
+            var localizationRepository = new LocalizationRepository(Context);
+
+            foreach (var localization in entity.Localizations)
+            {
+                localizationRepository.CreateDependencies(localization);
             }
         }
     }

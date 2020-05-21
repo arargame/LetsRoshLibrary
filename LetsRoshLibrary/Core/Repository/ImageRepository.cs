@@ -46,7 +46,7 @@ namespace LetsRoshLibrary.Core.Repository
                 return i => i.Name == entity.Name && i.Path == entity.Path && i.Data.SequenceEqual(entity.Data);
         }
 
-        public override void InsertDependencies(Image entity)
+        public override void CreateDependencies(Image entity)
         {
             ChangeEntityState(entity, EntityState.Added);
         }

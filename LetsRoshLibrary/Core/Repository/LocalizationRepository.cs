@@ -11,22 +11,6 @@ namespace LetsRoshLibrary.Core.Repository
 {
     public class LocalizationRepository : Repository<Localization>
     {
-        public LocalizationRepository(DbContext dbContext) : base(dbContext)
-        {
-
-        }
-
-        public LocalizationRepository()
-        {
-        }
-
-        public override void ConvertToPersistent(Localization entity)
-        {
-            base.ConvertToPersistent(entity);
-
-            new LanguageRepository(Context).ConvertToPersistent(entity.Language);
-        }
-
         public static string[] Includes
         {
             get
@@ -41,7 +25,37 @@ namespace LetsRoshLibrary.Core.Repository
             return Includes;
         }
 
-        public override void InsertDependencies(Localization entity)
+        public LocalizationRepository(DbContext dbContext) : base(dbContext) { }
+
+        public LocalizationRepository(){ }
+
+        public override void ConvertToPersistent(Localization entity)
+        {
+            base.ConvertToPersistent(entity);
+
+            new LanguageRepository(Context).ConvertToPersistent(entity.Language);
+        }
+
+        public override void CreateUpdateOrDeleteGraph(Localization entity)
+        {
+            var languageRepository = new LanguageRepository(Context);
+
+            if (languageRepository.IsItNew(entity.Language))
+            {
+                languageRepository.Create(entity.Language);
+            }
+            else
+            {
+                languageRepository.Update(entity.Language);
+            }
+        }
+
+        public override void DeleteDependencies(Localization entity)
+        {
+            new LanguageRepository(Context).ChangeEntityState(entity.Language, EntityState.Unchanged);
+        }
+
+        public override void CreateDependencies(Localization entity)
         {
             var baseObjectRepository = new BaseObjectRepository(Context);
 
@@ -52,7 +66,6 @@ namespace LetsRoshLibrary.Core.Repository
                 if (existingBaseObject != null)
                     entity.BaseObject = existingBaseObject;
             }
-
 
             var languageRepository = new LanguageRepository(Context);
 
@@ -67,40 +80,11 @@ namespace LetsRoshLibrary.Core.Repository
             }
             else
                 languageRepository.Create(entity.Language);
-                //languageRepository.ChangeEntityState(entity.Language, EntityState.Added);
-        }
-
-        //public override bool Insert(Localization entity)
-        //{
-        //    new LanguageRepository(Context).Insert(entity.Language);
-
-        //     base.Insert(entity);
-
-        //    return true;
-        //}
-
-        public override void DeleteDependencies(Localization entity)
-        {
-            new LanguageRepository(Context).ChangeEntityState(entity.Language,EntityState.Unchanged);
         }
 
         public override Expression<Func<Localization, bool>> UniqueFilter(Localization entity,bool forEntityFramework = true)
         {
             return l => l.BaseObjectId == entity.BaseObjectId && l.LanguageId == entity.LanguageId && l.PropertyName == entity.PropertyName;
-        }
-
-        public override void InsertUpdateOrDeleteGraph(Localization entity)
-        {
-            var languageRepository = new LanguageRepository(Context);
-
-            if (languageRepository.IsItNew(entity.Language))
-            {
-                languageRepository.Create(entity.Language);
-            }
-            else
-            {
-                languageRepository.Update(entity.Language);
-            }
         }
 
     }

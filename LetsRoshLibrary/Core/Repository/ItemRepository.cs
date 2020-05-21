@@ -12,27 +12,6 @@ namespace LetsRoshLibrary.Core.Repository
 {
     public class ItemRepository : Repository<Item>
     {
-        public ItemRepository(DbContext context) : base(context)
-        {
-
-        }
-
-        public static string[] Includes
-        {
-            get
-            {
-                return BaseObjectRepository.Includes;
-            }
-        }
-
-        public static string[] ThenIncludes
-        {
-            get
-            {
-                return BaseObjectRepository.ThenIncludes;
-            }
-        }
-
         public static string[] AllIncludes
         {
             get
@@ -51,44 +30,39 @@ namespace LetsRoshLibrary.Core.Repository
             return ThenIncludes;
         }
 
-        public override void InsertDependencies(Item entity)
+        public static string[] Includes
         {
-            new BaseObjectRepository(Context).InsertDependencies(entity);
+            get
+            {
+                return BaseObjectRepository.Includes;
+            }
+        }
+        public static string[] ThenIncludes
+        {
+            get
+            {
+                return BaseObjectRepository.ThenIncludes;
+            }
         }
 
-        public override bool Create(Item entity)
+        public ItemRepository(DbContext context) : base(context)
         {
-            var isInserted = false;
 
-            //InsertDependencies(entity);
+        }
 
-            isInserted = base.Create(entity);
+        public override void CreateDependencies(Item entity)
+        {
+            new BaseObjectRepository(Context).CreateDependencies(entity);
+        }
 
-            foreach (var ent in Context.ChangeTracker.Entries())
-            {
-                Console.WriteLine(ent.Entity.GetType().Name + " : " + ent.State);
-            }
-
-            return isInserted;
+        public override void CreateUpdateOrDeleteGraph(Item entity)
+        {
+            new BaseObjectRepository(Context).CreateUpdateOrDeleteGraph(entity);
         }
 
         public override void DeleteDependencies(Item entity)
         {
             new BaseObjectRepository(Context).DeleteDependencies(entity);
-        }
-
-        //public override bool Delete(Item entity)
-        //{
-        //    var isDeleted = false;
-
-        //    isDeleted = base.Delete(entity);
-
-        //    return isDeleted;
-        //}
-
-        public override void InsertUpdateOrDeleteGraph(Item entity)
-        {
-            new BaseObjectRepository(Context).InsertUpdateOrDeleteGraph(entity);
         }
 
         public override Expression<Func<Item, bool>> UniqueFilter(Item entity, bool forEntityFramework = true)

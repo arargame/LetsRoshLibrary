@@ -8,21 +8,61 @@ using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace LetsRoshTestApp
 {
-    class Program
+
+    public static class Extensions
     {
+        public static List<PropertyInfo> GetDbSetProperties(this DbContext context)
+        {
+            var dbSetProperties = new List<PropertyInfo>();
+            var properties = context.GetType().GetProperties();
+
+            foreach (var property in properties)
+            {
+                var setType = property.PropertyType;
+
+                var isDbSet = setType.IsGenericType && (typeof(IDbSet<>).IsAssignableFrom(setType.GetGenericTypeDefinition()) || setType.GetInterface(typeof(IDbSet<>).FullName) != null);
+
+
+                if (isDbSet)
+                {
+                    dbSetProperties.Add(property);
+                }
+            }
+
+            return dbSetProperties;
+
+        }
+    }
+    class Program
+    { 
         static void Main()
         {
+            using (var uow = new Dota2UnitofWork())
+            {
+                uow.Load<Item>();
+
+                new Repository<Item>(uow.Context);
+
+                var dbSetProperties = uow.Context.GetDbSetProperties();
+                List<object> dbSets = dbSetProperties.Select(x => x.GetValue(uow.Context, null)).ToList();
+            }
+
             var itemService = new ItemService();
 
             var list = itemService.Select(includes: ItemRepository.AllIncludes);
 
-            var persistentItem = itemService.Select(includes:ItemRepository.AllIncludes).FirstOrDefault();
+            //var persistentItem = itemService.Select(includes:ItemRepository.AllIncludes).FirstOrDefault();
+
+            var persistentItem = new Item() { LinkParameter = "blink1010" };
+
+            itemService.Update(persistentItem);
 
             //using (var uow =new Dota2UnitofWork())
             //{

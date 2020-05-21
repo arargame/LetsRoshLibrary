@@ -1,15 +1,12 @@
-﻿using LetsRoshLibrary.Core.Context;
-using LetsRoshLibrary.Core.Repository;
+﻿using LetsRoshLibrary.Core.Repository;
 using LetsRoshLibrary.Core.UnitofWork;
 using LetsRoshLibrary.Model;
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Data.Entity;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace LetsRoshLibrary.Services
 {
@@ -30,34 +27,54 @@ namespace LetsRoshLibrary.Services
 
         public T AnonymousTypeToT(object anonymous)
         {
+            T t = null;
+
             try
             {
-                T t = (T)Activator.CreateInstance(typeof(T));
+                t = (T)Activator.CreateInstance(typeof(T));
 
                 var anonymousObjectsProperties = anonymous.GetType().GetProperties();
+
                 var tsProperties = typeof(T).GetProperties();
 
                 foreach (var property in anonymousObjectsProperties)
                 {
                     if (tsProperties.Any(tp=>tp.Name == property.Name))
                     {
-                        var tProperty = tsProperties.FirstOrDefault(tp => tp.Name == property.Name);
+                        var tProperty = tsProperties.FirstOrDefault(tp => tp.Name == property.Name && tp.CanWrite);
+
+                        if (tProperty == null)
+                            continue;
 
                         if (tProperty.Name == property.Name && tProperty.PropertyType.Name == property.PropertyType.Name)
                             t.GetType().GetProperty(property.Name).SetValue(t, property.GetValue(anonymous, null));
 
                     }
                 }
-
-                return t;
             }
             catch (Exception ex)
             {
-                throw ex;
+                Log.Save(new Log(ex.Message));
             }
+
+            return t;
         }
 
-        public virtual void ConvertToPersistent(T disconnectedEntity,object persistent = null,Func<object> populatePersistent=null) 
+        public bool Create(T entity)
+        {
+            var isCommitted = false;
+
+            using (var uow = new Dota2UnitofWork())
+            {
+                GetRepository(uow.Context).Create(entity);
+
+                isCommitted = uow.Commit();
+            }
+
+            return isCommitted;
+        }
+
+        public virtual void ConvertToPersistent(T disconnectedEntity, object persistent = null, Func<object> populatePersistent = null)
         {
             persistent = persistent ?? populatePersistent();
 
@@ -74,20 +91,6 @@ namespace LetsRoshLibrary.Services
                 ReplaceIds(disconnectedEntity, connectedEntity);
             else
                 disconnectedEntity.ChangeEntityState(System.Data.Entity.EntityState.Added);
-        }
-
-        public bool Create(T entity)
-        {
-            var isCommitted = false;
-
-            using (var uow = new Dota2UnitofWork())
-            {
-                GetRepository(uow.Context).Create(entity);
-
-                isCommitted = uow.Commit();
-            }
-
-            return isCommitted;
         }
 
         public bool Delete(T entity)
@@ -138,7 +141,6 @@ namespace LetsRoshLibrary.Services
             return entity;
         }
 
-
         public virtual Repository<T> GetRepository(DbContext context)
         {
             return new Repository<T>(context);
@@ -170,7 +172,8 @@ namespace LetsRoshLibrary.Services
 
             using (var uow = new Dota2UnitofWork())
             {
-                GetRepository(uow.Context).Update(entity);
+                if (!GetRepository(uow.Context).Update(entity))
+                    return false;
 
                 isCommitted = uow.Commit();
             }
