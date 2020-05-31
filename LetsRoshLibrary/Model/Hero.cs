@@ -264,8 +264,8 @@ namespace LetsRoshLibrary.Model
 
         public override void SetLocalization(Language language)
         {
-            Localizations.Add(Localization.Create(this,language, "Hero", "Roles", Roles));
-            Localizations.Add(Localization.Create(this,language, "Hero", "Bio", Bio));
+            Localizations.Add(new Localization(this,language, "Hero", "Roles", Roles));
+            Localizations.Add(new Localization(this,language, "Hero", "Bio", Bio));
 
             Skills.ToList().ForEach(s => s.SetLocalization(language));
         }

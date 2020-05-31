@@ -62,19 +62,5 @@ namespace LetsRoshLibrary.Model
             Code = code;
         }
 
-        public static Language GetFromDb(string name)
-        {
-            Language language = null;
-
-            using (var uow = new Dota2UnitofWork())
-            {
-                var repository = uow.Load<Language>();
-
-                language = repository.Get(l => l.Name == name);
-            }
-
-            return language;
-        }
-
     }
 }

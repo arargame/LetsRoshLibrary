@@ -36,76 +36,19 @@ namespace LetsRoshLibrary.Model
             }
         }
 
-        //public override bool Equals(object obj)
-        //{
-        //    var localization = obj as Localization;
-
-        //    return ClassName == localization.ClassName && PropertyName == localization.PropertyName && Language.Id == localization.Language.Id;
-        //}
-
-        //public override int GetHashCode()
-        //{
-        //    return base.GetHashCode();
-        //}
-
         public Localization() { }
 
-        public static Localization Create(BaseObject baseObject,Language language, string className, string propertyName, string value)
+        public Localization(BaseObject baseObject, Language language, string className, string propertyName, string value)
         {
-            var localization = new Localization
-            {
-                BaseObject = baseObject,
-                Language = Language.GetFromDb(language.Name),
-                ClassName = className,
-                PropertyName = propertyName,
-                Value = value
-            };
+            BaseObject = baseObject;
 
-            return localization;
-        }
+            Language = language;
 
-        public static bool DeleteFromDb(Expression<Func<Localization, bool>> filter)
-        {
-            var isCommitted = false;
+            ClassName = className;
 
-            Guid? entityId = null;
+            PropertyName = propertyName;
 
-            try
-            {
-                using (var uow = new Dota2UnitofWork())
-                {
-                    var localizationRepository = new LocalizationRepository(uow.Context);
-
-                    var entity = localizationRepository.Get(filter, LocalizationRepository.Includes);
-
-                    entityId = entity?.Id;
-
-                    if (!localizationRepository.Delete(entity))
-                        throw new Exception("LocalizationRepository Delete Exception");
-
-                    isCommitted = uow.Commit();
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Save(new Log(ex.Message, entityId: entityId?.ToString()));
-            }
-
-            return isCommitted;
-        }
-
-        public static Localization GetFromDb(Expression<Func<Localization, bool>> filter, params string[] includes)
-        {
-            Localization entity = null;
-
-            using (var uow = new Dota2UnitofWork())
-            {
-                entity = uow.Load<Localization>().Get(filter, includes);
-            }
-
-            return entity;
-        }
-
-
+            Value = value;
+        }      
     }
 }

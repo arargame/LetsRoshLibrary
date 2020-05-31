@@ -11,6 +11,10 @@ namespace LetsRoshLibrary.Core.Repository
 {
     public class ImageRepository : Repository<Image>
     {
+        public override string[] GetIncludes()
+        {
+            return BaseObjectRepository.Includes;
+        }
         public ImageRepository(DbContext context) : base(context)
         {
 
@@ -38,41 +42,13 @@ namespace LetsRoshLibrary.Core.Repository
         //    return false;
         //}
 
-        public override Expression<Func<Image, bool>> UniqueFilter(Image entity,bool forEntityFramework = true)
+        public override Expression<Func<Image, bool>> UniqueFilter(Image entity, bool forEntityFramework = true)
         {
-            if(forEntityFramework)
+            if (forEntityFramework)
                 return i => i.Name == entity.Name && i.Path == entity.Path && i.Data == entity.Data;
             else
                 return i => i.Name == entity.Name && i.Path == entity.Path && i.Data.SequenceEqual(entity.Data);
         }
 
-        public override void CreateDependencies(Image entity)
-        {
-            ChangeEntityState(entity, EntityState.Added);
-        }
-
-        public override bool Create(Image entity)
-        {
-            return base.Create(entity);
-        }
-
-        public override void DeleteDependencies(Image entity)
-        {
-            ChangeEntityState(entity,EntityState.Deleted);
-        }
-
-        //public override bool Delete(Image entity)
-        //{
-        //    var isDeleted = false;
-
-        //    isDeleted = new Repository<Image>(Context).Delete(entity);
-
-        //    return isDeleted;
-        //}
-
-        public override string[] GetIncludes()
-        {
-            return BaseObjectRepository.Includes;
-        }
     }
 }

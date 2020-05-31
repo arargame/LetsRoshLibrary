@@ -70,6 +70,7 @@
     <Compile Include="Core\Repository\LanguageRepository.cs" />
     <Compile Include="Core\Repository\LocalizationRepository.cs" />
     <Compile Include="Core\Repository\Repository.cs" />
+    <Compile Include="Core\Repository\UniqueFilter.cs" />
     <Compile Include="Core\UnitofWork\Dota2UnitofWork.cs" />
     <Compile Include="Core\UnitofWork\IUnitofWork.cs" />
     <Compile Include="Core\UnitofWork\UnitofWork.cs" />
@@ -90,6 +91,7 @@
     <Compile Include="Services\BaseObjectService.cs" />
     <Compile Include="Services\ImageService.cs" />
     <Compile Include="Services\ItemService.cs" />
+    <Compile Include="Services\LanguageService.cs" />
     <Compile Include="Services\LocalizationService.cs" />
     <Compile Include="Services\Service.cs" />
   </ItemGroup>

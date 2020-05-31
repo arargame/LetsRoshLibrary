@@ -25,6 +25,8 @@ namespace LetsRoshLibrary.Services
             if (disconnectedEntity.Image != null && persistentImage != null)
             {
                 new ImageService().ConvertToPersistent(disconnectedEntity.Image, persistentImage);
+
+                disconnectedEntity.ImageId = disconnectedEntity.Image.Id; 
             }
 
             if (disconnectedEntity.Localizations.Any())
@@ -38,13 +40,11 @@ namespace LetsRoshLibrary.Services
 
                 foreach (var disconnectedEntityLocalization in disconnectedEntity.Localizations)
                 {
-                    var lp = new LocalizationRepository();
+                    var localizationRepository = new LocalizationRepository();
 
-                    if (persistentLocalizations.Any(lp.UniqueFilter(disconnectedEntityLocalization).Compile()))
-                    {
-                        new LocalizationService().ConvertToPersistent(disconnectedEntityLocalization, persistentLocalizations.FirstOrDefault(lp.UniqueFilter(disconnectedEntityLocalization).Compile()));
-                    }
-                    else
+                    new LocalizationService().ConvertToPersistent(disconnectedEntityLocalization, persistentLocalizations.FirstOrDefault(localizationRepository.UniqueFilter(disconnectedEntityLocalization).Compile()));
+
+                    if (persistentLocalizations.Any(localizationRepository.UniqueFilter(disconnectedEntityLocalization).Compile()))
                     {
                         disconnectedEntityLocalization.ChangeEntityState(System.Data.Entity.EntityState.Added);
                     }

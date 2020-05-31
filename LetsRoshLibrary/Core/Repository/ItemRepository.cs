@@ -50,6 +50,8 @@ namespace LetsRoshLibrary.Core.Repository
 
         }
 
+        public ItemRepository() { }
+
         public override void CreateDependencies(Item entity)
         {
             new BaseObjectRepository(Context).CreateDependencies(entity);

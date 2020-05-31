@@ -42,7 +42,7 @@ namespace LetsRoshLibrary.Model
             }
             catch (Exception ex)
             {
-                Log.Save(new Log(ex.Message + string.Format(" (path : {0},name : {1})", path, name), LogType.Error));
+                //Log.Save(new Log(ex.Message + string.Format(" (path : {0},name : {1})", path, name), LogType.Error));
             }
 
             return new Image(path, imageAsByteArray,name);

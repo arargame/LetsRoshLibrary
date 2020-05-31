@@ -12,16 +12,18 @@ namespace LetsRoshLibrary.Services
 {
     public abstract class Service<T> where T : BaseObject
     {
-        public Service()
+        public Repository<T> Repository { get; set; }
+
+        public Service() 
         {
-            
+            SetRepository();
         }
 
         public bool Any(Expression<Func<T, bool>> filter = null)
         {
             using (var uow = new Dota2UnitofWork())
             {
-                return GetRepository(uow.Context).Any(filter);
+                return Repository.SetContext(uow.Context).Any(filter);
             }
         }
 
@@ -39,7 +41,7 @@ namespace LetsRoshLibrary.Services
 
                 foreach (var property in anonymousObjectsProperties)
                 {
-                    if (tsProperties.Any(tp=>tp.Name == property.Name))
+                    if (tsProperties.Any(tp => tp.Name == property.Name))
                     {
                         var tProperty = tsProperties.FirstOrDefault(tp => tp.Name == property.Name && tp.CanWrite);
 
@@ -47,7 +49,7 @@ namespace LetsRoshLibrary.Services
                             continue;
 
                         if (tProperty.Name == property.Name && tProperty.PropertyType.Name == property.PropertyType.Name)
-                            t.GetType().GetProperty(property.Name).SetValue(t, property.GetValue(anonymous, null));
+                            tProperty.SetValue(t, property.GetValue(anonymous, null));
 
                     }
                 }
@@ -66,7 +68,7 @@ namespace LetsRoshLibrary.Services
 
             using (var uow = new Dota2UnitofWork())
             {
-                GetRepository(uow.Context).Create(entity);
+                Repository.SetContext(uow.Context).Create(entity);
 
                 isCommitted = uow.Commit();
             }
@@ -74,18 +76,58 @@ namespace LetsRoshLibrary.Services
             return isCommitted;
         }
 
+        public bool CreateOrUpdate(T entity)
+        {
+            var isCommitted = false;
+
+            using (var uow = new Dota2UnitofWork())
+            {
+                var repository = Repository.SetContext(uow.Context);
+
+                if (!(repository.IsItNew(entity) ? repository.Create(entity) : repository.Update(entity)))
+                    return false;
+
+                isCommitted = uow.Commit();
+            }
+
+            return isCommitted;
+        }
+
+        //public Expression<Func<T,bool>> Predicate(T entity)
+        //{
+        //    if (typeof(T).Name == typeof(Item).Name)
+        //    {
+        //        //return i => (i as Item).LinkParameter == (entity as Item).LinkParameter;
+                
+        //        var func = new ItemRepository().UniqueFilter(entity as Item).Compile();
+
+        //        var func2 = new Func<T, bool>((T t)=> 
+        //        {
+        //            return func(t as Item);
+        //        });
+
+        //        Expression<Func<T, bool>> expression = Expression.Lambda<Func<T, bool>>(Expression.Call(func2.Method));
+
+        //        return null;
+        //    }
+
+        //    return null;
+        //}
+
         public virtual void ConvertToPersistent(T disconnectedEntity, object persistent = null, Func<object> populatePersistent = null)
         {
             persistent = persistent ?? populatePersistent();
 
             if (persistent == null)
             {
+                disconnectedEntity.ChangeEntityState(System.Data.Entity.EntityState.Added);
+
                 return;
             }
 
             var connectedEntity = AnonymousTypeToT(persistent);
-
-            var isExist = new[] { disconnectedEntity }.Any(new Repository<T>().UniqueFilter(connectedEntity, false).Compile());
+         
+            var isExist = new[] { disconnectedEntity }.Any(Repository.UniqueFilter(connectedEntity, false).Compile());
 
             if (isExist)
                 ReplaceIds(disconnectedEntity, connectedEntity);
@@ -108,7 +150,7 @@ namespace LetsRoshLibrary.Services
             {
                 using (var uow = new Dota2UnitofWork())
                 {
-                    var repository = GetRepository(uow.Context);
+                    var repository = Repository.SetContext(uow.Context);
 
                     var existingEntity = repository.Get(filter, repository.GetAllIncludes());
 
@@ -136,15 +178,24 @@ namespace LetsRoshLibrary.Services
             using (var uow = new Dota2UnitofWork())
             {
                 entity = uow.Load<T>().Get(filter, includes);
+
+                uow.Load<T>().ShowChangeTrackerEntriesStates();
+
+                uow.Commit();
             }
 
             return entity;
         }
 
-        public virtual Repository<T> GetRepository(DbContext context)
-        {
-            return new Repository<T>(context);
-        }
+        //public virtual Repository<T> GetRepository()
+        //{
+        //    return new Repository<T>();
+        //}
+
+        //public virtual Repository<T> GetRepository(DbContext context)
+        //{
+        //    return new Repository<T>(context);
+        //}
 
         public void ReplaceIds(T localEntity,T existingEntity)
         {
@@ -159,12 +210,16 @@ namespace LetsRoshLibrary.Services
 
             using (var uow = new Dota2UnitofWork())
             {
-                results = GetRepository(uow.Context).Select(filter, includes).ToList();
+                results = Repository.SetContext(uow.Context).Select(filter, includes).ToList();
             }
 
             return results;
         }
 
+        public virtual void SetRepository(Repository<T> repository = null)
+        {
+            Repository = repository ?? new Repository<T>();
+        }
 
         public bool Update(T entity)
         {
@@ -172,7 +227,7 @@ namespace LetsRoshLibrary.Services
 
             using (var uow = new Dota2UnitofWork())
             {
-                if (!GetRepository(uow.Context).Update(entity))
+                if (!Repository.SetContext(uow.Context).Update(entity))
                     return false;
 
                 isCommitted = uow.Commit();

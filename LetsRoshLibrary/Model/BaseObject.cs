@@ -1,10 +1,12 @@
-﻿using System;
+﻿using LetsRoshLibrary.Core.Repository;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Data.Entity;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -20,6 +22,11 @@ namespace LetsRoshLibrary.Model
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         [Index(IsClustered = false, IsUnique = true)]
         public Guid Id { get; set; }
+
+        [StringLength(20)]
+        public string DiscriminatorInfo { get; set; }
+
+        public string TestColumn { get; set; }
 
         [StringLength(50)]
         public string Name { get; set; }
@@ -70,6 +77,10 @@ namespace LetsRoshLibrary.Model
             AddedDate = DateTime.Now;
             ModifiedDate = DateTime.Now;
 
+            IsActive = true;
+
+            DiscriminatorInfo = GetType().Name;
+
             Localizations = new List<Localization>();
         }
 
@@ -92,7 +103,6 @@ namespace LetsRoshLibrary.Model
 
         public void AddLocalization(Localization localization)
         {
-
             if (localization == null)
                 throw new Exception("localization parameter is null");
 
@@ -103,5 +113,12 @@ namespace LetsRoshLibrary.Model
         {
             EntityState = entityState;
         }
+
+        //public virtual Expression<Func<BaseObject, bool>> UniqueFilter(BaseObject entity, bool forEntityFramework = true)
+        //{
+        //    return o => o.Id == entity.Id;
+        //}
+
+
     }
 }

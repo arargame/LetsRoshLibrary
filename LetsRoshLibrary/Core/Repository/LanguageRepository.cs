@@ -11,15 +11,12 @@ namespace LetsRoshLibrary.Core.Repository
 {
     public class LanguageRepository : Repository<Language>
     {
-        public override string[] GetIncludes()
-        {
-            return null;
-        }
-
         public LanguageRepository(DbContext context) : base(context)
         {
 
         }
+
+        public LanguageRepository() { }
 
         public override Expression<Func<Language, bool>> UniqueFilter(Language entity,bool forEntityFramework = true)
         {

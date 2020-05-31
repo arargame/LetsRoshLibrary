@@ -78,7 +78,7 @@ namespace LetsRoshLibrary.Core.Repository
 
         public override void CreateUpdateOrDeleteGraph(BaseObject entity)
         {
-            var existingEntity = GetExistingEntity(entity);
+            var existingEntity = GetEntityFromContext(entity);
 
             var imageRepository = new ImageRepository(Context);
 
@@ -86,14 +86,23 @@ namespace LetsRoshLibrary.Core.Repository
             {
                 if (entity.Image == null)
                     imageRepository.Delete(existingEntity.Image);
-                else
+                else if (new[] { existingEntity.Image }.Any(imageRepository.UniqueFilter(entity.Image, false).Compile()))
                     imageRepository.Update(entity.Image);
+                else
+                    imageRepository.Create(entity.Image);
             }
-            else
+            else if (entity.Image != null)
             {
                 imageRepository.Create(entity.Image);
             }
 
+            if (entity.Image != null)
+            {
+                entity.ImageId = entity.Image.Id;
+
+                if (GetEntityState(entity.Image) == EntityState.Added)
+                    existingEntity.Image = entity.Image;
+            }
 
             var localizationRepository = new LocalizationRepository(Context);
 
@@ -123,15 +132,18 @@ namespace LetsRoshLibrary.Core.Repository
         public override void DeleteDependencies(BaseObject entity)
         {
             if (entity.Image != null)
-                ChangeEntityState(entity.Image, EntityState.Deleted);
+                //new ImageRepository(Context).DeleteDependencies(entity.Image);
+                new ImageRepository(Context).Delete(entity.Image);
 
             var localizationRepository = new LocalizationRepository(Context);
 
             foreach (var localization in entity.Localizations.ToList())
             {
-                localizationRepository.DeleteDependencies(localization);
+                //localizationRepository.DeleteDependencies(localization);
 
-                ChangeEntityState(localization, EntityState.Deleted);
+                //ChangeEntityState(localization, EntityState.Deleted);
+
+                localizationRepository.Delete(localization);
             }
         }
 

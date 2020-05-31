@@ -23,7 +23,7 @@ namespace LetsRoshLibrary.Services
             {
                 using (var uow = new Dota2UnitofWork())
                 {
-                    var repository = GetRepository(uow.Context);
+                    var repository = new LocalizationRepository(uow.Context);
 
                     return repository.Select(repository.UniqueFilter(disconnectedEntity), repository.GetAllIncludes())
                     .Select(q => new
@@ -37,7 +37,17 @@ namespace LetsRoshLibrary.Services
                 }
             };
 
+            new LanguageService().ConvertToPersistent(disconnectedEntity.Language);
+
+            disconnectedEntity.LanguageId = disconnectedEntity.Language.Id;
+            disconnectedEntity.BaseObjectId = disconnectedEntity.BaseObject.Id;
+
             base.ConvertToPersistent(disconnectedEntity, persistent, populatePersistent);
+        }
+
+        public override void SetRepository(Repository<Localization> repository = null)
+        {
+            base.SetRepository(new LocalizationRepository());
         }
     }
 }
