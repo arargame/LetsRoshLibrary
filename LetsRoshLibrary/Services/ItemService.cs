@@ -60,10 +60,7 @@ namespace LetsRoshLibrary.Services
 
             new BaseObjectService().ConvertToPersistent(disconnectedEntity, persistent, populatePersistent);
         }
-        //public override Repository<Item> GetRepository(DbContext context)
-        //{
-        //    return new ItemRepository(context);
-        //}
+
 
         public static async Task<List<Item>> LoadFromDota2Com(string linkParameter = null, Language language = null)
         {
@@ -187,7 +184,6 @@ namespace LetsRoshLibrary.Services
                     {
                         taskList.Add(Task.Run(() =>
                         {
-
                             foreach (var data in dataGroup.Where(dg => dg.Name == item.LinkParameter))
                             {
                                 try
@@ -207,10 +203,11 @@ namespace LetsRoshLibrary.Services
                                         item.AddLocalization(new Localization(item, lang, "Item", "Attribute", itemAttributes));
 
                                     var doc2 = new HtmlDocument();
+
                                     doc2.LoadHtml(data.ChildValues["desc"].ToString());
 
                                     if (doc2 == null || doc2.DocumentNode == null)
-                                        throw new Exception("buırda");
+                                        throw new Exception("burda");
 
                                     if (!string.IsNullOrEmpty(doc2.DocumentNode.InnerText))
                                         item.AddLocalization(new Localization(item, lang, "Item", "Description", doc2.DocumentNode.InnerText));
@@ -224,8 +221,6 @@ namespace LetsRoshLibrary.Services
                                 {
                                     throw ex;
                                 }
-
-
                             }
                         }));
                     }
@@ -237,31 +232,6 @@ namespace LetsRoshLibrary.Services
             {
                 Log.Save(new Log(ex.Message, LogType.Error));
             }
-
-
-
-            //var htmlParser = new HtmlParser("https://www.dotabuff.com/items/", DataAccessType.FromWeb).Load();
-
-            //var itemLinkNodes = HtmlParser.GetDescendantsByAttribute(htmlParser.Document.DocumentNode, "div", "class", "content-inner")
-            //                                .FirstOrDefault()
-            //                                .Descendants("tbody")
-            //                                .FirstOrDefault()
-            //                                .Descendants("tr");
-
-            //foreach (var itemNode in itemLinkNodes)
-            //{
-            //    var item = new Item();
-
-            //    var linkNode = itemNode.Descendants("a").FirstOrDefault();
-
-            //    //var detailUrl = string.Format("https://www.dotabuff.com{0}", linkNode.GetAttributeValue("href", ""));
-
-            //    var detailUrl = "https://www.dotabuff.com/items/satanic";
-
-            //    var detailNode = new HtmlParser(detailUrl, DataAccessType.FromWeb).Load().Document.DocumentNode;
-
-            //    LoadDetail(item, detailNode);
-            //}
 
             return itemList;
         }

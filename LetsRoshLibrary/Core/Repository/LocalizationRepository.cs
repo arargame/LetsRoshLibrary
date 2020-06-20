@@ -11,18 +11,9 @@ namespace LetsRoshLibrary.Core.Repository
 {
     public class LocalizationRepository : Repository<Localization>
     {
-        public static string[] Includes
-        {
-            get
-            {
-                return new[] { "BaseObject", "Language" };
-            }
-        }
-
-
         public override string[] GetIncludes()
         {
-            return Includes;
+            return new[] { "BaseObject", "Language" };
         }
 
         public LocalizationRepository(DbContext dbContext) : base(dbContext) { }

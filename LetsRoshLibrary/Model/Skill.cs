@@ -9,10 +9,10 @@ namespace LetsRoshLibrary.Model
 {
     public class Skill : BaseObject
     {
-        public Guid HeroId { get; set; }
+        public Guid CharacterId { get; set; }
 
-        [ForeignKey("HeroId")]
-        public Hero Hero { get; set; }
+        [ForeignKey("CharacterId")]
+        public Character Character { get; set; }
         public string ManaCost { get; set; }
         public string CoolDown { get; set; }
         public string Extra { get; set; }

@@ -20,6 +20,44 @@ namespace LetsRoshTestApp
     { 
         static void Main()
         {
+
+            //using (var uow = new Dota2UnitofWork())
+            //{
+            //    var rep = new CharacterRepository(uow.Context);
+
+            //    var chars = rep.Select().ToList();
+            //}
+
+            //Logda fazlalık var Create Hero da
+            // parametreli ve paralel işlemeli Hero.Load
+            //Log ta id ler gelebilir
+            // Log ta total etkilenen nesneleri toparlıyor 2000 tane nesne insert edildi diye
+
+            var heroes = HeroService.LoadFromDota2Com("tiny", Language.LanguagesFromDota2.Where(l => l.Name == "turkish").FirstOrDefault()).Result;
+
+
+            foreach (var hero in heroes)
+            {
+                var heroService = new HeroService();
+
+                heroService.ConvertToPersistent(hero);
+            }
+
+
+
+            //using (var uow = new Dota2UnitofWork())
+            //{
+            //    var rep = new HeroRepository(uow.Context);
+
+            //    foreach (var hero in heroes)
+            //    {
+            //        rep.Create(hero);
+
+            //        var bb = uow.Commit();
+            //    }
+            //}
+
+
             //var imageService = new ImageService();
             //var img = imageService.Get(i=>i.Id.ToString()== "C5C3910A-ECA1-EA11-BA95-C8D3FF210A02");
 
@@ -54,7 +92,7 @@ namespace LetsRoshTestApp
             
             //var webResults = ItemService.LoadFromDota2Com(language: Language.LanguagesFromDota2.Where(l => l.Name == "bulgarian").FirstOrDefault()).Result;
 
-            var webResults = new ItemService().Select(i => i.Localizations.Any(l => l.Language.Name == "bulgarian"), ItemRepository.AllIncludes);
+            var webResults = new ItemService().Select(i => i.Localizations.Any(l => l.Language.Name == "bulgarian"), new ItemRepository().GetAllIncludes());
 
             //webResults.OrderBy(wr => wr.LinkParameter).FirstOrDefault().Localizations.FirstOrDefault().Language = new Language() { Name = "test", Code = "tst" };
 
@@ -116,7 +154,7 @@ namespace LetsRoshTestApp
             //itemService.Update(list.FirstOrDefault());
 
 
-            var itemSample = new ItemService().Get(i => i.LinkParameter == "blink", ItemRepository.AllIncludes);
+            var itemSample = new ItemService().Get(i => i.LinkParameter == "blink", new ItemRepository().GetAllIncludes());
 
             var lclclc = new Localization(itemSample, Language.LanguagesFromDota2.FirstOrDefault(), "className", "propertyName", Guid.NewGuid().ToString());
 

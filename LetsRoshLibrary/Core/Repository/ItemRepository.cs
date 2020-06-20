@@ -12,43 +12,17 @@ namespace LetsRoshLibrary.Core.Repository
 {
     public class ItemRepository : Repository<Item>
     {
-        public static string[] AllIncludes
-        {
-            get
-            {
-                return Includes.Union(ThenIncludes).ToArray();
-            }
-        }
-
         public override string[] GetIncludes()
         {
-            return Includes;
+            return new BaseObjectRepository().GetIncludes();
         }
 
         public override string[] GetThenIncludes()
         {
-            return ThenIncludes;
+            return new BaseObjectRepository().GetThenIncludes();
         }
 
-        public static string[] Includes
-        {
-            get
-            {
-                return BaseObjectRepository.Includes;
-            }
-        }
-        public static string[] ThenIncludes
-        {
-            get
-            {
-                return BaseObjectRepository.ThenIncludes;
-            }
-        }
-
-        public ItemRepository(DbContext context) : base(context)
-        {
-
-        }
+        public ItemRepository(DbContext context) : base(context) { }
 
         public ItemRepository() { }
 

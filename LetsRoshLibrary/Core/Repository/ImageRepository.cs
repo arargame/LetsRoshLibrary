@@ -11,14 +11,7 @@ namespace LetsRoshLibrary.Core.Repository
 {
     public class ImageRepository : Repository<Image>
     {
-        public override string[] GetIncludes()
-        {
-            return BaseObjectRepository.Includes;
-        }
-        public ImageRepository(DbContext context) : base(context)
-        {
-
-        }
+        public ImageRepository(DbContext context) : base(context) { }
 
         public ImageRepository() { }
 

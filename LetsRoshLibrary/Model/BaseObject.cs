@@ -26,8 +26,6 @@ namespace LetsRoshLibrary.Model
         [StringLength(20)]
         public string DiscriminatorInfo { get; set; }
 
-        public string TestColumn { get; set; }
-
         [StringLength(50)]
         public string Name { get; set; }
 
@@ -103,8 +101,9 @@ namespace LetsRoshLibrary.Model
 
         public void AddLocalization(Localization localization)
         {
-            if (localization == null)
-                throw new Exception("localization parameter is null");
+            localization.BaseObject = this;
+
+            localization.BaseObjectId = Id;
 
             Localizations.Add(localization);
         }
@@ -113,12 +112,5 @@ namespace LetsRoshLibrary.Model
         {
             EntityState = entityState;
         }
-
-        //public virtual Expression<Func<BaseObject, bool>> UniqueFilter(BaseObject entity, bool forEntityFramework = true)
-        //{
-        //    return o => o.Id == entity.Id;
-        //}
-
-
     }
 }

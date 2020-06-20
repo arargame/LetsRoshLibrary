@@ -11,56 +11,21 @@ namespace LetsRoshLibrary.Core.Repository
 {
     public class BaseObjectRepository : Repository<BaseObject>
     {
-        public static string[] AllIncludes
-        {
-            get
-            {
-                return Includes.Union(ThenIncludes).ToArray();
-            }
-        }
-        public static string[] Includes
-        {
-            get
-            {
-                return new string[] { "Image", "Localizations" };
-            }
-        }
-
         public override string[] GetIncludes()
         {
-            return Includes;
+            return new string[] { "Image", "Localizations" };
         }
 
         public override string[] GetThenIncludes()
         {
-            return ThenIncludes;
-        }
-
-        public static string[] ThenIncludes
-        {
-            get
-            {
-                return new string[] { "Localizations.Language" };
-            }
+            return new string[] { "Localizations.Language" };
         }
 
 
-        public BaseObjectRepository(DbContext context) : base(context)
-        {
+        public BaseObjectRepository(DbContext context) : base(context) { }
 
-        }
+        public BaseObjectRepository() { }
 
-        public override void ConvertToPersistent(BaseObject entity)
-        {
-            new ImageRepository(Context).ConvertToPersistent(entity.Image);
-
-            var localizationRepository = new LocalizationRepository(Context);
-
-            foreach (var localization in entity.Localizations)
-            {
-                localizationRepository.ConvertToPersistent(localization);
-            }
-        }
 
         public override bool Create(BaseObject entity)
         {
@@ -74,6 +39,18 @@ namespace LetsRoshLibrary.Core.Repository
             }
 
             return isInserted;
+        }
+
+        public override void CreateDependencies(BaseObject entity)
+        {
+            new ImageRepository(Context).CreateDependencies(entity.Image);
+
+            var localizationRepository = new LocalizationRepository(Context);
+
+            foreach (var localization in entity.Localizations)
+            {
+                localizationRepository.CreateDependencies(localization);
+            }
         }
 
         public override void CreateUpdateOrDeleteGraph(BaseObject entity)
@@ -100,7 +77,7 @@ namespace LetsRoshLibrary.Core.Repository
             {
                 entity.ImageId = entity.Image.Id;
 
-                if (GetEntityState(entity.Image) == EntityState.Added)
+                if (imageRepository.GetEntityState(entity.Image) == EntityState.Added)
                     existingEntity.Image = entity.Image;
             }
 
@@ -129,6 +106,18 @@ namespace LetsRoshLibrary.Core.Repository
             }
         }
 
+        public override void ConvertToPersistent(BaseObject entity)
+        {
+            new ImageRepository(Context).ConvertToPersistent(entity.Image);
+
+            var localizationRepository = new LocalizationRepository(Context);
+
+            foreach (var localization in entity.Localizations)
+            {
+                localizationRepository.ConvertToPersistent(localization);
+            }
+        }
+
         public override void DeleteDependencies(BaseObject entity)
         {
             if (entity.Image != null)
@@ -147,17 +136,5 @@ namespace LetsRoshLibrary.Core.Repository
             }
         }
 
-
-        public override void CreateDependencies(BaseObject entity)
-        {
-            new ImageRepository(Context).CreateDependencies(entity.Image);
-
-            var localizationRepository = new LocalizationRepository(Context);
-
-            foreach (var localization in entity.Localizations)
-            {
-                localizationRepository.CreateDependencies(localization);
-            }
-        }
     }
 }

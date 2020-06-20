@@ -63,6 +63,8 @@
     <Compile Include="Core\Connection\CustomConnection.cs" />
     <Compile Include="Core\Context\MainContext.cs" />
     <Compile Include="Core\Repository\BaseObjectRepository.cs" />
+    <Compile Include="Core\Repository\CharacterRepository.cs" />
+    <Compile Include="Core\Repository\HeroRepository.cs" />
     <Compile Include="Core\Repository\ImageRepository.cs" />
     <Compile Include="Core\Repository\Includes.cs" />
     <Compile Include="Core\Repository\IRepository.cs" />
@@ -70,7 +72,7 @@
     <Compile Include="Core\Repository\LanguageRepository.cs" />
     <Compile Include="Core\Repository\LocalizationRepository.cs" />
     <Compile Include="Core\Repository\Repository.cs" />
-    <Compile Include="Core\Repository\UniqueFilter.cs" />
+    <Compile Include="Core\Repository\SkillRepository.cs" />
     <Compile Include="Core\UnitofWork\Dota2UnitofWork.cs" />
     <Compile Include="Core\UnitofWork\IUnitofWork.cs" />
     <Compile Include="Core\UnitofWork\UnitofWork.cs" />
@@ -89,11 +91,14 @@
     <Compile Include="Model\Skill.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\BaseObjectService.cs" />
+    <Compile Include="Services\CharacterService.cs" />
+    <Compile Include="Services\HeroService.cs" />
     <Compile Include="Services\ImageService.cs" />
     <Compile Include="Services\ItemService.cs" />
     <Compile Include="Services\LanguageService.cs" />
     <Compile Include="Services\LocalizationService.cs" />
     <Compile Include="Services\Service.cs" />
+    <Compile Include="Services\SkillService.cs" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>

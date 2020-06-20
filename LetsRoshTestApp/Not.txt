@@ -1,0 +1,8 @@
+﻿20.06.2020
++GetAllIncludes kullanım alanlarını incele
++Skill deki GetThenIncludes yapısını düşün
++Character e Skills taşınması lazım,ona göre repository ve service ayarlanacak
+-testler ypaılacak
+
+21.6.2020
+-disconnected entities için skills ve localization gibi collection larda baseobject veya character gibi navigation propertyler null geliyor

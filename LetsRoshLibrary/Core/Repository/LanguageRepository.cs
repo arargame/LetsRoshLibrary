@@ -11,10 +11,7 @@ namespace LetsRoshLibrary.Core.Repository
 {
     public class LanguageRepository : Repository<Language>
     {
-        public LanguageRepository(DbContext context) : base(context)
-        {
-
-        }
+        public LanguageRepository(DbContext context) : base(context) { }
 
         public LanguageRepository() { }
 
