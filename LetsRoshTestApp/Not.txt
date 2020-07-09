@@ -6,3 +6,7 @@
 
 21.6.2020
 -disconnected entities için skills ve localization gibi collection larda baseobject veya character gibi navigation propertyler null geliyor
+
+22.6.2020
+-ConvertToPersistent içerisinde abstract yapılar için farklı bir yaklaşım ile ilerlendiğinin notunu al github ta
+-service ConvertToPersistent içerisinde persistentlerin null gelmesi durumunu test et

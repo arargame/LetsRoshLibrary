@@ -11,9 +11,12 @@ namespace LetsRoshLibrary.Services
 {
     public class LanguageService : Service<Language>
     {
-        public LanguageService() { }
+        public LanguageService(bool enableProxyCreationForContext = true) : base(enableProxyCreationForContext)
+        {
 
-        public override void ConvertToPersistent(Language disconnectedEntity, object persistent = null, Func<object> populatePersistent = null)
+        }
+
+        public override void ConvertToPersistent(Language disconnectedEntity, Language persistent = null, Func<Language> populatePersistent = null)
         {
             populatePersistent = () =>
             {
@@ -27,9 +30,22 @@ namespace LetsRoshLibrary.Services
                         q.Id,
                         q.Name
                     })
+                    .ToList()
+                    .Select(ql => new Language()
+                    {
+                        Id = ql.Id,
+                        Name = ql.Name
+                    })
                     .SingleOrDefault();
                 }
             };
+
+            persistent = persistent ?? populatePersistent();
+
+            if (persistent == null)
+            {
+                return;
+            }
 
             base.ConvertToPersistent(disconnectedEntity, persistent, populatePersistent);
         }

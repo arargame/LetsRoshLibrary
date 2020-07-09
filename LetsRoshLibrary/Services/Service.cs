@@ -14,9 +14,11 @@ namespace LetsRoshLibrary.Services
     {
         public Repository<T> Repository { get; set; }
 
-        public Service() 
+        public Service(bool enableProxyCreationForContext = true) 
         {
             SetRepository();
+
+            Repository.EnableProxyCreationForContext(enableProxyCreationForContext);
         }
 
         public bool Any(Expression<Func<T, bool>> filter = null)
@@ -27,7 +29,12 @@ namespace LetsRoshLibrary.Services
             }
         }
 
-        public T AnonymousTypeToT(object anonymous)
+        //public virtual BaseObject AnonymousTypeToT(BaseObject baseObject)
+        //{
+        //    return null;
+        //}
+
+        public virtual T AnonymousTypeToT(object anonymous)
         {
             T t = null;
 
@@ -50,6 +57,10 @@ namespace LetsRoshLibrary.Services
 
                         if (tProperty.Name == property.Name && tProperty.PropertyType.Name == property.PropertyType.Name)
                             tProperty.SetValue(t, property.GetValue(anonymous, null));
+                        else
+                        {
+                            Console.WriteLine(property.Name);
+                        }
 
                     }
                 }
@@ -114,25 +125,25 @@ namespace LetsRoshLibrary.Services
         //    return null;
         //}
 
-        public virtual void ConvertToPersistent(T disconnectedEntity, object persistent = null, Func<object> populatePersistent = null)
+        public virtual void ConvertToPersistent(T disconnectedEntity, T persistent = null, Func<T> populatePersistent = null)
         {
             persistent = persistent ?? populatePersistent();
 
             if (persistent == null)
             {
-                disconnectedEntity.ChangeEntityState(System.Data.Entity.EntityState.Added);
-
                 return;
             }
 
-            var connectedEntity = AnonymousTypeToT(persistent);
-         
+            //var connectedEntity = AnonymousTypeToT(persistent);
+
+            var connectedEntity = persistent;
+
             var isExist = new[] { disconnectedEntity }.Any(Repository.UniqueFilter(connectedEntity, false).Compile());
 
             if (isExist)
                 ReplaceIds(disconnectedEntity, connectedEntity);
             else
-                disconnectedEntity.ChangeEntityState(System.Data.Entity.EntityState.Added);
+                Console.WriteLine("It is not exist : Type : {0}, DisconnectedEntity : {1}, Persistent : {2}", typeof(T).Name, disconnectedEntity.Id, persistent.Id);
         }
 
         public bool Delete(T entity)
@@ -170,6 +181,10 @@ namespace LetsRoshLibrary.Services
             return isCommitted;
         }
 
+        public List<T> Find(Guid id, params string[] includes)
+        {
+            return Select(t => t.Id == id, includes);
+        }
 
         public T Get(Expression<Func<T, bool>> filter, params string[] includes)
         {
@@ -200,8 +215,6 @@ namespace LetsRoshLibrary.Services
         public void ReplaceIds(T localEntity,T existingEntity)
         {
             localEntity.Id = existingEntity.Id;
-
-            localEntity.ChangeEntityState(EntityState.Unchanged);
         }
 
         public List<T> Select(Expression<Func<T, bool>> filter = null, params string[] includes)
@@ -210,7 +223,11 @@ namespace LetsRoshLibrary.Services
 
             using (var uow = new Dota2UnitofWork())
             {
-                results = Repository.SetContext(uow.Context).Select(filter, includes).ToList();
+                uow.Context.Configuration.ProxyCreationEnabled = Repository.ProxyCreationEnabled;
+
+                results = Repository.SetContext(uow.Context)
+                                    .Select(filter, includes)
+                                    .ToList();
             }
 
             return results;

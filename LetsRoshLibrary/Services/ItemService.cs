@@ -17,12 +17,12 @@ namespace LetsRoshLibrary.Services
 {
     public class ItemService : Service<Item>
     {
-        public ItemService()  
+        public ItemService(bool enableProxyCreationForContext = true) : base(enableProxyCreationForContext)
         {
-        
+
         }
 
-        public override void ConvertToPersistent(Item disconnectedEntity, object persistent = null, Func<object> populatePersistent = null)
+        public override void ConvertToPersistent(Item disconnectedEntity, Item persistent = null, Func<Item> populatePersistent = null)
         {
             populatePersistent = () => 
             {
@@ -35,26 +35,25 @@ namespace LetsRoshLibrary.Services
                     {
                         q.Id,
                         q.LinkParameter,
-                        Image = new
-                        {
-                            Id = (Guid?)q.Image.Id,
-                            q.Image.Name,
-                            q.Image.Path,
-                            q.Image.Data
-                        },
-                        Localizations = q.Localizations.Select(l => new
-                        {
-                            l.Id,
-                            l.BaseObjectId,
-                            l.LanguageId,
-                            l.PropertyName
-                        })
+                        q.ImageId
+                    })
+                    .ToList()
+                    .Select(qi => new Item()
+                    {
+                        Id = qi.Id,
+                        LinkParameter = qi.LinkParameter,
+                        ImageId = qi.ImageId
                     })
                     .SingleOrDefault();
                 }
             };
 
             persistent = persistent ?? populatePersistent();
+
+            if (persistent == null)
+            {
+                return;
+            }
 
             base.ConvertToPersistent(disconnectedEntity, persistent, populatePersistent);
 

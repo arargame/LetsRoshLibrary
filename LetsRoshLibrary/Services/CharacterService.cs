@@ -1,4 +1,5 @@
 ﻿using LetsRoshLibrary.Core.Repository;
+using LetsRoshLibrary.Core.UnitofWork;
 using LetsRoshLibrary.Model;
 using System;
 using System.Collections.Generic;
@@ -10,11 +11,38 @@ namespace LetsRoshLibrary.Services
 {
     public class CharacterService : Service<Character>
     {
-        public CharacterService() { }
-
-        public override void ConvertToPersistent(Character disconnectedEntity, object persistent = null, Func<object> populatePersistent = null)
+        public CharacterService(bool enableProxyCreationForContext = true) : base(enableProxyCreationForContext)
         {
-            base.ConvertToPersistent(disconnectedEntity, persistent, populatePersistent);
+
+        }
+
+        public override void ConvertToPersistent(Character disconnectedEntity, Character persistent = null, Func<Character> populatePersistent = null)
+        {
+            persistent = persistent ?? populatePersistent();
+
+            if (persistent == null)
+            {
+                return;
+            }
+
+            new BaseObjectService().ConvertToPersistent(disconnectedEntity, persistent, populatePersistent);
+
+            persistent.Skills = new SkillService(false).Select(s => s.CharacterId == persistent.Id);
+
+            if (disconnectedEntity.Skills.Any() && persistent.Skills.Any())
+            {
+                var skillService = new SkillService();
+
+                foreach (var disconnectedEntitySkill in disconnectedEntity.Skills)
+                {
+                    disconnectedEntitySkill.Character = disconnectedEntity;
+
+                    disconnectedEntitySkill.CharacterId = disconnectedEntity.Id;
+
+                    skillService.ConvertToPersistent(disconnectedEntitySkill,
+                        persistent.Skills.FirstOrDefault(skillService.Repository.UniqueFilter(disconnectedEntitySkill).Compile()));
+                }
+            }
         }
 
         public override void SetRepository(Repository<Character> repository = null)

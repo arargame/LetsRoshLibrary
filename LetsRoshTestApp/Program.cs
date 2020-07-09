@@ -20,6 +20,71 @@ namespace LetsRoshTestApp
     { 
         static void Main()
         {
+            //var heroes = HeroService.LoadFromDota2Com("tiny", Language.LanguagesFromDota2.Where(l => l.Name == "turkish").FirstOrDefault()).Result;
+            var heroes = HeroService.LoadFromDota2Com("omniknight", Language.LanguagesFromDota2.Where(l => l.Name == "turkish").FirstOrDefault()).Result;
+
+            //Func<Hero> populatePersistent = () =>
+            //{
+            //    using (var uow = new Dota2UnitofWork())
+            //    {
+            //        var repository = new HeroRepository(uow.Context);
+
+            //        return repository.Select(repository.UniqueFilter(heroes.FirstOrDefault()), repository.GetAllIncludes())
+            //        .Select(q => new
+            //        {
+            //            q.Id,
+            //            q.Name,
+            //            Image = new
+            //            {
+            //                Id = (Guid?)q.Image.Id,
+            //                q.Image.Name,
+            //                q.Image.Path,
+            //                q.Image.Data
+            //            },
+            //            Localizations = q.Localizations.Select(l => new
+            //            {
+            //                l.Id,
+            //                l.BaseObjectId,
+            //                l.LanguageId,
+            //                l.PropertyName
+            //            }),
+            //            Skills = q.Skills.Select(s => new
+            //            {
+            //                s.Id,
+            //                s.CharacterId,
+            //                s.Name,
+            //                Image = new
+            //                {
+            //                    Id = (Guid?)s.Image.Id,
+            //                    s.Image.Name,
+            //                    s.Image.Path,
+            //                    s.Image.Data
+            //                },
+            //                Localizations = s.Localizations.Select(l => new
+            //                {
+            //                    l.Id,
+            //                    l.BaseObjectId,
+            //                    l.LanguageId,
+            //                    l.PropertyName
+            //                }),
+            //            })
+
+            //        })
+            //        .ToList()
+            //        .Select(l => new Hero()
+            //        {
+            //            Id = l.Id,
+            //            Name = l.Name,
+            //            Image = new ImageService().AnonymousTypeToT(l.Image),
+            //            Localizations = l.Localizations.Select(ll=>new LocalizationService().AnonymousTypeToT(ll)).ToList(),
+            //            Skills = l.Skills.Select(ls=>new SkillService().AnonymousTypeToT(ls)).ToList()
+            //        })
+            //        .SingleOrDefault();
+            //    }
+            //};
+
+            //var x = populatePersistent();
+
 
             //using (var uow = new Dota2UnitofWork())
             //{
@@ -33,7 +98,7 @@ namespace LetsRoshTestApp
             //Log ta id ler gelebilir
             // Log ta total etkilenen nesneleri toparlıyor 2000 tane nesne insert edildi diye
 
-            var heroes = HeroService.LoadFromDota2Com("tiny", Language.LanguagesFromDota2.Where(l => l.Name == "turkish").FirstOrDefault()).Result;
+
 
 
             foreach (var hero in heroes)
@@ -41,6 +106,8 @@ namespace LetsRoshTestApp
                 var heroService = new HeroService();
 
                 heroService.ConvertToPersistent(hero);
+
+                Console.WriteLine("{0} : {1}", hero.Name, heroService.CreateOrUpdate(hero));
             }
 
 

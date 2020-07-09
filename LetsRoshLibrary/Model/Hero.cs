@@ -13,17 +13,12 @@ namespace LetsRoshLibrary.Model
     {
         public string Roles { get; set; }
 
-        public Guid? PortraitId { get; set; }
-
-        [ForeignKey("PortraitId")]
-        public Image Portrait { get; set; }
-
         public Hero() { }
 
         public override void SetLocalization(Language language)
         {
-            Localizations.Add(new Localization(this,language, "Hero", "Roles", Roles));
-            Localizations.Add(new Localization(this,language, "Hero", "Bio", Bio));
+            AddLocalization(new Localization(this,language, "Hero", "Roles", Roles));
+            AddLocalization(new Localization(this,language, "Hero", "Bio", Bio));
 
             Skills.ToList().ForEach(s => s.SetLocalization(language));
         }

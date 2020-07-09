@@ -68,7 +68,6 @@ namespace LetsRoshLibrary.Model
 
         public BaseObject()
         {
-            ChangeEntityState(EntityState.Unchanged);
 
             Id = Guid.NewGuid();
 
@@ -106,11 +105,6 @@ namespace LetsRoshLibrary.Model
             localization.BaseObjectId = Id;
 
             Localizations.Add(localization);
-        }
-
-        public void ChangeEntityState(EntityState entityState)
-        {
-            EntityState = entityState;
         }
     }
 }

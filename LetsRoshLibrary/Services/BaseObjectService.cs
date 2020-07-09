@@ -3,6 +3,7 @@ using LetsRoshLibrary.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -10,8 +11,12 @@ namespace LetsRoshLibrary.Services
 {
     public class BaseObjectService : Service<BaseObject>
     {
+        public BaseObjectService(bool enableProxyCreationForContext = true) : base(enableProxyCreationForContext)
+        {
 
-        public override void ConvertToPersistent(BaseObject disconnectedEntity, object persistent = null, Func<object> populatePersistent = null)
+        }
+
+        public override void ConvertToPersistent(BaseObject disconnectedEntity, BaseObject persistent = null, Func<BaseObject> populatePersistent = null)
         {
             persistent = persistent ?? populatePersistent();
 
@@ -20,33 +25,36 @@ namespace LetsRoshLibrary.Services
                 return;
             }
 
-            var persistentImage = persistent.GetType().GetProperty("Image").GetValue(persistent, null);
+            persistent.Image = new ImageService(false).Get(i => i.Id == persistent.ImageId);
 
-            if (disconnectedEntity.Image != null && persistentImage != null)
+            if (disconnectedEntity.Image != null && persistent.Image != null)
             {
-                new ImageService().ConvertToPersistent(disconnectedEntity.Image, persistentImage);
+                new ImageService().ConvertToPersistent(disconnectedEntity.Image, persistent.Image);
 
                 disconnectedEntity.ImageId = disconnectedEntity.Image.Id; 
             }
 
-            if (disconnectedEntity.Localizations.Any())
+            persistent.Localizations = new LocalizationService(false).Select(l => l.BaseObjectId == persistent.Id);
+
+            if (disconnectedEntity.Localizations.Any() && persistent.Localizations.Any())
             {
-                var list = persistent.GetType().GetProperty("Localizations").GetValue(persistent, null) as IEnumerable<object>;
-
-                if (list == null)
-                    return;
-
-                var persistentLocalizations = list.Select(pl => new LocalizationService().AnonymousTypeToT(pl)).ToList();
+                var localizationService = new LocalizationService();
 
                 foreach (var disconnectedEntityLocalization in disconnectedEntity.Localizations)
                 {
-                    var localizationRepository = new LocalizationRepository();
+                    disconnectedEntityLocalization.BaseObject = disconnectedEntity;
 
-                    new LocalizationService().ConvertToPersistent(disconnectedEntityLocalization, persistentLocalizations.FirstOrDefault(localizationRepository.UniqueFilter(disconnectedEntityLocalization).Compile()));
+                    disconnectedEntityLocalization.BaseObjectId = disconnectedEntity.Id;
 
-                    if (persistentLocalizations.Any(localizationRepository.UniqueFilter(disconnectedEntityLocalization).Compile()))
+                    Func<Localization, bool> predicate = l => l.PropertyName == disconnectedEntityLocalization.PropertyName && l.BaseObjectId == disconnectedEntityLocalization.BaseObjectId;
+
+                    if (persistent.Localizations.Any(predicate))
                     {
-                        disconnectedEntityLocalization.ChangeEntityState(System.Data.Entity.EntityState.Added);
+                        var persistentLocalization = persistent.Localizations.FirstOrDefault(predicate);
+
+                        disconnectedEntityLocalization.LanguageId = persistentLocalization.LanguageId;
+
+                        localizationService.ConvertToPersistent(disconnectedEntityLocalization, persistentLocalization);
                     }
                 }
             }

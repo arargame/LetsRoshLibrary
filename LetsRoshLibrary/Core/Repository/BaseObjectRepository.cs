@@ -78,7 +78,11 @@ namespace LetsRoshLibrary.Core.Repository
                 entity.ImageId = entity.Image.Id;
 
                 if (imageRepository.GetEntityState(entity.Image) == EntityState.Added)
+                {
+                    imageRepository.Delete(existingEntity.Image);
+
                     existingEntity.Image = entity.Image;
+                }
             }
 
             var localizationRepository = new LocalizationRepository(Context);
@@ -121,17 +125,12 @@ namespace LetsRoshLibrary.Core.Repository
         public override void DeleteDependencies(BaseObject entity)
         {
             if (entity.Image != null)
-                //new ImageRepository(Context).DeleteDependencies(entity.Image);
                 new ImageRepository(Context).Delete(entity.Image);
 
             var localizationRepository = new LocalizationRepository(Context);
 
             foreach (var localization in entity.Localizations.ToList())
             {
-                //localizationRepository.DeleteDependencies(localization);
-
-                //ChangeEntityState(localization, EntityState.Deleted);
-
                 localizationRepository.Delete(localization);
             }
         }

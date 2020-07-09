@@ -18,6 +18,17 @@ namespace LetsRoshLibrary.Core.Repository
         public override void CreateDependencies(Skill entity)
         {
             new BaseObjectRepository(Context).CreateDependencies(entity);
+
+            var characterRepository = new CharacterRepository(Context);
+
+            if (!characterRepository.IsItNew(entity.Character))
+            {
+                var existingCharacter = characterRepository.GetExistingEntity(entity.Character);
+
+                if (existingCharacter != null)
+                    entity.Character = existingCharacter;
+            }
+
         }
 
         public override void CreateUpdateOrDeleteGraph(Skill entity)

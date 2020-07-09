@@ -16,6 +16,7 @@ namespace LetsRoshLibrary.Core.Repository
         protected DbContext Context;
 
         protected DbSet<T> DbSet;
+        public bool ProxyCreationEnabled { get; set; }
 
         public Repository(DbContext context)
         {
@@ -83,7 +84,7 @@ namespace LetsRoshLibrary.Core.Repository
 
             try
             {
-                if (GetExistingEntity(entity, false) != null)
+                if (GetUnique(entity, true) != null)
                     return false;
 
                 CreateDependencies(entity);
@@ -103,8 +104,8 @@ namespace LetsRoshLibrary.Core.Repository
                         Description = string.Join(",", GetContextChangeTrackerEntries().Select(e => string.Format("{0}:{1}", e.Entity.GetType().Name, e.State)))
                     };
 
-                    if (entity.GetType().Name != "Log")
-                        Log.Save(new Log(string.Format("In {0} insertion process {1} entities was affected.Message : {2}", typeof(T).Name,message.Count, message.Description), LogType.Info, entity.Id.ToString()));
+                    //if (entity.GetType().Name != "Log")
+                    //    Log.Save(new Log(string.Format("In {0} insertion process {1} entities was affected.Message : {2}", typeof(T).Name,message.Count, message.Description), LogType.Info, entity.Id.ToString()));
 
                     Console.WriteLine(string.Format("In {0} insertion process {1} entities was affected.Message : {2}", typeof(T).Name, message.Count, message.Description));
 
@@ -123,6 +124,8 @@ namespace LetsRoshLibrary.Core.Repository
         {
             ChangeEntityState(entity, EntityState.Added);
         }
+
+        public virtual void CreateUpdateOrDeleteGraph(T entity) { }
 
         public bool Contains(Expression<Func<T, bool>> predicate)
         {
@@ -181,6 +184,11 @@ namespace LetsRoshLibrary.Core.Repository
         public virtual void DeleteDependencies(T entity) 
         {
             ChangeEntityState(entity, EntityState.Deleted);
+        }
+
+        public void EnableProxyCreationForContext(bool enable = true)
+        {
+            ProxyCreationEnabled = enable;
         }
 
         public T Get(Expression<Func<T, bool>> filter, params string[] includes)
@@ -266,9 +274,9 @@ namespace LetsRoshLibrary.Core.Repository
             return GetAsDbEntityEntry(entity).State;
         }
 
-        public T GetExistingEntity(T entity,bool throwException = true)
+        public T GetExistingEntity(T entity,bool throwException = true,bool withAllIncludes = true)
         {
-            T t = GetEntityFromContext(entity) ?? GetUnique(entity, true);
+            T t = GetEntityFromContext(entity) ?? GetUnique(entity, withAllIncludes);
 
             if (t == null && throwException)
                 throw new Exception("There is no such an entity in either Db or Context");
@@ -340,9 +348,6 @@ namespace LetsRoshLibrary.Core.Repository
             return GetModifiedProperties(entity).Any();
         }
 
-
-        public virtual void CreateUpdateOrDeleteGraph(T entity) { }
-
         public bool IsExistsOnContext(T entity)
         {
             return GetContextChangeTrackerEntries().Any(e => (e.Entity as BaseObject).Id == entity.Id);
@@ -372,7 +377,6 @@ namespace LetsRoshLibrary.Core.Repository
                     }
 
                 return filter != null ? query.Where(filter) : query;
-
             }
             catch (Exception ex)
             {
@@ -416,7 +420,10 @@ namespace LetsRoshLibrary.Core.Repository
 
             foreach (var e in GetContextChangeTrackerEntries())
             {
-                Console.WriteLine("{0} : {1} ({2})", e.Entity.GetType().BaseType.Name, e.State, (e.Entity as BaseObject).Id);
+                //Hero_5279B33EBBDC032E0417D7CF4CD023D8DF037610FE554626AE177604A8238711
+                var entityTypeName = e.Entity.GetType().Name.Contains('_') ? e.Entity.GetType().Name.Split('_')[0] : e.Entity.GetType().Name;
+
+                Console.WriteLine("{0} : {1} ({2})", entityTypeName, e.State, (e.Entity as BaseObject).Id);
             }
         }
 

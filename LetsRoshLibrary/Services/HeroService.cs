@@ -6,6 +6,7 @@ using LetsRoshLibrary.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -13,9 +14,21 @@ namespace LetsRoshLibrary.Services
 {
     public class HeroService : Service<Hero>
     {
-        public HeroService() { }
+        public HeroService(bool enableProxyCreationForContext = true) : base(enableProxyCreationForContext)
+        {
 
-        public override void ConvertToPersistent(Hero disconnectedEntity, object persistent = null, Func<object> populatePersistent = null)
+        }
+
+        //public override Hero AnonymousTypeToT(object anonymous)
+        //{
+        //    var hero = new BaseObjectService().AnonymousTypeToT(anonymous) as Hero;
+
+        //    hero = AnonymousTypeToT(hero);
+
+        //    return hero;
+        //}
+
+        public override void ConvertToPersistent(Hero disconnectedEntity, Hero persistent = null, Func<Hero> populatePersistent = null)
         {
             populatePersistent = () =>
             {
@@ -23,39 +36,25 @@ namespace LetsRoshLibrary.Services
                 {
                     var repository = new HeroRepository(uow.Context);
 
+                    new HeroService().Select();
+
+                    //return repository.Select(repository.UniqueFilter(disconnectedEntity)).ToList()
+                    //.Select(s=> s as Hero)
+                    //.SingleOrDefault();
+
                     return repository.Select(repository.UniqueFilter(disconnectedEntity), repository.GetAllIncludes())
                     .Select(q => new
                     {
                         q.Id,
                         q.Name,
-                        Portrait = new
-                        {
-                            Id = (Guid?)q.Portrait.Id,
-                            q.Portrait.Name,
-                            q.Portrait.Path,
-                            q.Portrait.Data
-                        },
-                        Image = new
-                        {
-                            Id = (Guid?)q.Image.Id,
-                            q.Image.Name,
-                            q.Image.Path,
-                            q.Image.Data
-                        },
-                        Localizations = q.Localizations.Select(l => new
-                        {
-                            l.Id,
-                            l.BaseObjectId,
-                            l.LanguageId,
-                            l.PropertyName
-                        }),
-                        Skills = q.Skills.Select(s => new
-                        {
-                            s.Id,
-                            s.CharacterId,
-                            s.Name
-                        })
-
+                        q.ImageId
+                    })
+                    .ToList()
+                    .Select(h => new Hero()
+                    {
+                        Id = h.Id,
+                        Name = h.Name,
+                        ImageId = h.ImageId
                     })
                     .SingleOrDefault();
                 }
@@ -65,7 +64,7 @@ namespace LetsRoshLibrary.Services
 
             base.ConvertToPersistent(disconnectedEntity, persistent, populatePersistent);
 
-            new BaseObjectService().ConvertToPersistent(disconnectedEntity, persistent, populatePersistent);
+            new CharacterService().ConvertToPersistent(disconnectedEntity, persistent, populatePersistent);
         }
 
         public static async Task<List<Hero>> LoadFromDota2Com(string linkParameter = null,Language language = null)
@@ -192,12 +191,12 @@ namespace LetsRoshLibrary.Services
                     }
                 }
 
-                var portraitNode = HtmlParser.GetDescendantsByAttribute(mainNode, "img", "id", "heroPrimaryPortraitImg").FirstOrDefault();
+                //var portraitNode = HtmlParser.GetDescendantsByAttribute(mainNode, "img", "id", "heroPrimaryPortraitImg").FirstOrDefault();
 
-                if (portraitNode == null)
-                    throw new Exception("portraitNode is null");
+                //if (portraitNode == null)
+                //    throw new Exception("portraitNode is null");
 
-                hero.Portrait = Image.Load(imageNode.GetAttributeValue("src", ""), hero.Name);
+                //hero.Portrait = Image.Load(imageNode.GetAttributeValue("src", ""), hero.Name);
 
                 var bioNode = HtmlParser.GetDescendantsByAttribute(mainNode, "div", "id", "bioInner").FirstOrDefault();
 

@@ -12,12 +12,12 @@ namespace LetsRoshLibrary.Services
 {
     public class LocalizationService : Service<Localization>
     {
-        public LocalizationService()
+        public LocalizationService(bool enableProxyCreationForContext = true) : base(enableProxyCreationForContext)
         {
 
         }
 
-        public override void ConvertToPersistent(Localization disconnectedEntity, object persistent = null, Func<object> populatePersistent = null)
+        public override void ConvertToPersistent(Localization disconnectedEntity, Localization persistent = null, Func<Localization> populatePersistent = null)
         {
             populatePersistent = () =>
             {
@@ -33,14 +33,33 @@ namespace LetsRoshLibrary.Services
                         q.LanguageId,
                         q.PropertyName
                     })
+                    .ToList()
+                    .Select(l => new Localization()
+                    {
+                        Id = l.Id,
+                        BaseObjectId = l.BaseObjectId,
+                        LanguageId = l.LanguageId,
+                        PropertyName = l.PropertyName
+                    })
                     .SingleOrDefault();
                 }
             };
 
-            new LanguageService().ConvertToPersistent(disconnectedEntity.Language);
+            persistent = persistent ?? populatePersistent();
 
-            disconnectedEntity.LanguageId = disconnectedEntity.Language.Id;
-            disconnectedEntity.BaseObjectId = disconnectedEntity.BaseObject.Id;
+            if (persistent == null)
+            {
+                return;
+            }
+
+            persistent.Language = new LanguageService(false).Get(l => l.Id == persistent.LanguageId);
+
+            if (disconnectedEntity.Language != null && persistent.Language != null)
+            {
+                new LanguageService().ConvertToPersistent(disconnectedEntity.Language, persistent.Language);
+
+                disconnectedEntity.LanguageId = disconnectedEntity.Language.Id;
+            }
 
             base.ConvertToPersistent(disconnectedEntity, persistent, populatePersistent);
         }
