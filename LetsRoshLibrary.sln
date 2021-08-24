@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LetsRoshLibrary", "LetsRosh
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LetsRoshTestApp", "LetsRoshTestApp\LetsRoshTestApp.csproj", "{A5BFD564-68B3-475D-9139-DB80162D422C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LetsRoshLibrary.Test", "UnitTestProject1\LetsRoshLibrary.Test.csproj", "{3AB98EA0-CA59-44D4-8F81-91666B07CCCA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{A5BFD564-68B3-475D-9139-DB80162D422C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A5BFD564-68B3-475D-9139-DB80162D422C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A5BFD564-68B3-475D-9139-DB80162D422C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3AB98EA0-CA59-44D4-8F81-91666B07CCCA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3AB98EA0-CA59-44D4-8F81-91666B07CCCA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3AB98EA0-CA59-44D4-8F81-91666B07CCCA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3AB98EA0-CA59-44D4-8F81-91666B07CCCA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

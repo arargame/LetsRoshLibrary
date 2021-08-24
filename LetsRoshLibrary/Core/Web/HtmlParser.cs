@@ -31,27 +31,34 @@ namespace LetsRoshLibrary.Core.Web
 
         public virtual HtmlParser Load(string path = null,string fromString = null)
         {
-            switch (AccessType)
+            try
             {
-                case DataAccessType.FromFile:
+                switch (AccessType)
+                {
+                    case DataAccessType.FromFile:
 
-                    Document.Load(path);
+                        Document.Load(path);
 
-                    break;
+                        break;
 
-                case DataAccessType.FromString:
+                    case DataAccessType.FromString:
 
-                    Document.LoadHtml(fromString);
+                        Document.LoadHtml(fromString);
 
-                    break;
+                        break;
 
-                case DataAccessType.FromWeb:
+                    case DataAccessType.FromWeb:
 
-                    var web = new HtmlWeb();
+                        var web = new HtmlWeb();
 
-                    Document = web.Load(Url);
+                        Document = web.Load(Url);
 
-                    break;
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
             }
 
             return this;
